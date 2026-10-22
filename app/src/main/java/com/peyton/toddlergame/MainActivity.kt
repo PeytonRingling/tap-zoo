@@ -22,6 +22,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
@@ -43,7 +44,22 @@ class MainActivity : ComponentActivity() {
     setContent { App(start, onExit = { unlock(); finishAndRemoveTask() }, onLock = { on -> if (on) lock() else unlock() }) }
   }
   override fun onResume() { super.onResume(); Audio.start(); BgMusic.resume(); hideBars()
-    if (Prefs.kidLock && !askedThisSession) { askedThisSession = true; window.decorView.post { lock() } } }
+    if (Prefs.kidLock && !askedThisSession) { askedThisSession = true; window.decorView.post { lock() } }
+    Updater.onResume(this, lifecycleScope) }
+
+  // ------------------------------------------------------------ app updates (Parent settings only)
+  // Screen pinning blocks Android's install prompt and the "install unknown apps" page, so updates unpin first;
+  // "Back to play" pins again.
+  fun checkForUpdates() = Updater.checkNow(this, lifecycleScope)
+  fun installUpdate() { unlock(); Updater.downloadAndInstall(this, lifecycleScope) }
+  fun allowInstalls() { unlock(); try { startActivity(Updater.permissionIntent(this)) } catch (_: Exception) {} }
+  override fun onNewIntent(intent: android.content.Intent) {
+    super.onNewIntent(intent)
+    if (intent.action == Updater.ACTION_STATUS) Updater.onStatus(this, intent)?.let { confirm ->
+      unlock()
+      try { startActivity(confirm) } catch (_: Exception) { Updater.ui = Updater.ui.copy(phase = UpdPhase.ERROR, message = "Android didn't show the install prompt.") }
+    }
+  }
   private var askedThisSession = false
   /** Screen pinning (lock task). Without device-owner, Android shows a one-time confirm; unpinning then needs the PIN if enabled. */
   fun lock() { if (!Prefs.kidLock || isLocked()) return; try { startLockTask() } catch (_: Exception) {} }

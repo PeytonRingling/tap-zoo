@@ -61,4 +61,14 @@ class ScreensTest {
   @Config(qualifiers = FOLDED) @Test fun aquariumFolded() = shot("18_aquarium_folded", "AQUARIUM")
   @Config(qualifiers = FOLDED) @Test fun gardenFolded() = shot("19_garden_folded", "GARDEN")
   @Config(qualifiers = FOLDED) @Test fun drumsFolded() = shot("20_drums_folded", "DRUMS")
+
+  // ---- App updates row in Parent settings (behind the 3 s gear hold); one render per state
+  private val rel9 = GhRelease("v9", "9", 2, "tap-zoo-v9-vc2.apk", "https://example.invalid/x.apk", 1)
+  private fun upd(name: String, ui: UpdUi) { Updater.ui = ui; try { shot("updates/$name", "SETTINGS") } finally { Updater.ui = UpdUi() } }
+  @Test fun updChecking() = upd("U1_checking", UpdUi(UpdPhase.CHECKING, "Checking for updates…"))
+  @Test fun updUpToDate() = upd("U2_up_to_date", UpdUi(UpdPhase.UP_TO_DATE, "Tap Zoo is up to date (version 9).", rel9))
+  @Test fun updAvailable() = upd("U3_update_available", UpdUi(UpdPhase.AVAILABLE, "Version 9 is available.", rel9))
+  @Test fun updError() = upd("U4_error_no_internet", UpdUi(UpdPhase.ERROR, "No internet connection. Check the network and try again."))
+  @Test fun updNeedsPermission() = upd("U5_needs_permission", UpdUi(UpdPhase.NEEDS_PERMISSION, "Version 9 is ready. Allow Tap Zoo to install updates, then come back.", rel9))
+  @Config(qualifiers = FOLDED) @Test fun updAvailableFolded() = upd("U6_update_available_folded", UpdUi(UpdPhase.AVAILABLE, "Version 9 is available.", rel9))
 }

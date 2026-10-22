@@ -173,6 +173,7 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
     Column(Modifier.widthIn(max = 600.dp).padding(28.dp).background(Color.White, RoundedCornerShape(28.dp)).verticalScroll(rememberScrollState()).padding(24.dp),
       verticalArrangement = Arrangement.spacedBy(14.dp)) {
       BasicText("Parent settings", style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color(0xFF222233)))
+      UpdatesRow(label)
       BasicText("Volume", style = label)
       Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
         for (i in 0..5) Box(Modifier.size(44.dp, (18 + i * 9).dp).background(if (i == 0) (if (vol == 0) Color(0xFFFF5D5D) else Color(0xFFF2C4C4)) else if (i <= vol) Color(0xFF4D96FF) else Color(0xFFDDDDE6), RoundedCornerShape(10.dp))
@@ -237,8 +238,43 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
         Box(Modifier.background(Color(0xFF4D96FF), RoundedCornerShape(16.dp)).clickable { onClose() }.padding(horizontal = 22.dp, vertical = 14.dp)) { BasicText("Back to play", style = label.copy(color = Color.White)) }
         Box(Modifier.background(Color(0xFFFF5D5D), RoundedCornerShape(16.dp)).clickable { onExit() }.padding(horizontal = 22.dp, vertical = 14.dp)) { BasicText("Exit app", style = label.copy(color = Color.White)) }
       }
-      BasicText("Hold the house 1.5 s to go back to the menu; hold the gear 3 s for this panel. Kid lock pins Tap Zoo to the screen: first time, Android asks to confirm. Turn on Settings › Security & privacy › More security & privacy › App pinning, and 'Ask for PIN before unpinning'. Exit app here unpins it. No ads, no internet, no data collected.",
+      BasicText("Hold the house 1.5 s to go back to the menu; hold the gear 3 s for this panel. Kid lock pins Tap Zoo to the screen: first time, Android asks to confirm. Turn on Settings › Security & privacy › More security & privacy › App pinning, and 'Ask for PIN before unpinning'. Exit app here unpins it. No ads, no data collected; the internet is used only when you tap Check for updates here.",
         style = TextStyle(fontSize = 13.sp, color = Color(0xFF666677)))
+    }
+  }
+}
+
+/** Parent-only "App updates" row (this panel is behind the 3-second gear hold). Nothing here runs on its own. */
+@Composable
+fun UpdatesRow(label: TextStyle) {
+  val act = androidx.compose.ui.platform.LocalContext.current as? MainActivity
+  val u = Updater.ui
+  val rel = u.release
+  val (button, onClick) = when (u.phase) {
+    UpdPhase.AVAILABLE -> "Install ${rel?.versionName}" to { act?.installUpdate() }
+    UpdPhase.NEEDS_PERMISSION -> "Allow installs" to { act?.allowInstalls() }
+    UpdPhase.CHECKING, UpdPhase.DOWNLOADING, UpdPhase.INSTALLING, UpdPhase.CONFIRM -> null to {}
+    else -> "Check for updates" to { act?.checkForUpdates() }
+  }
+  val tint = when (u.phase) {
+    UpdPhase.ERROR -> Color(0xFFD64545); UpdPhase.AVAILABLE, UpdPhase.DONE -> Color(0xFF2E9E4F); UpdPhase.NEEDS_PERMISSION -> Color(0xFFB7791F); else -> Color(0xFF666677)
+  }
+  val installed = remember(act) { act?.let { runCatching { it.packageManager.getPackageInfo(it.packageName, 0).versionName }.getOrNull() } }
+  Column(Modifier.fillMaxWidth().background(Color(0xFFF2F4FA), RoundedCornerShape(18.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+      Column(Modifier.weight(1f)) {
+        BasicText("App updates", style = label)
+        BasicText(u.message.ifEmpty { "Installed: version ${installed ?: "?"}. Updates come from Tap Zoo's GitHub releases." },
+          style = TextStyle(fontSize = 13.sp, color = tint), maxLines = 3)
+      }
+      if (button != null) Box(Modifier.padding(start = 10.dp).background(if (u.phase == UpdPhase.AVAILABLE) Color(0xFF2E9E4F) else Color(0xFF4D96FF), RoundedCornerShape(14.dp))
+        .clickable { onClick() }.padding(horizontal = 16.dp, vertical = 10.dp)) { BasicText(button, style = label.copy(color = Color.White, fontSize = 15.sp)) }
+    }
+    if (u.phase == UpdPhase.DOWNLOADING || u.phase == UpdPhase.CHECKING || u.phase == UpdPhase.INSTALLING) {
+      val p = u.progress
+      Box(Modifier.fillMaxWidth().height(6.dp).background(Color(0xFFDDDDE6), RoundedCornerShape(3.dp))) {
+        if (p != null) Box(Modifier.fillMaxHeight().fillMaxWidth(p.coerceIn(0f, 1f)).background(Color(0xFF4D96FF), RoundedCornerShape(3.dp)))
+      }
     }
   }
 }
