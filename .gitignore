@@ -1,0 +1,50 @@
+# --- Gradle / Android build output ---
+.gradle/
+build/
+**/build/
+.kotlin/
+.externalNativeBuild/
+.cxx/
+captures/
+*.hprof
+
+# --- Local machine config (SDK path etc.) ---
+local.properties
+
+# --- Built artifacts: never commit APKs/bundles ---
+*.apk
+*.aab
+*.apks
+*.idsig
+release/
+**/release/
+output-metadata.json
+
+# --- Signing keys & secrets: NEVER commit ---
+*.jks
+*.keystore
+*.keystore.lock
+*.p12
+*.pfx
+*.pem
+*.key
+*.der
+keystore.properties
+signing.properties
+secrets.properties
+*.secret
+.env
+.env.*
+google-services.json
+service-account*.json
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Generated Robolectric/Roborazzi renders (re-recorded on every test run) ---
+screens/

@@ -1,0 +1,4 @@
+[submodule "sounds"]
+	path = sounds
+	url = https://github.com/PeytonRingling/tap-zoo-sounds.git
+	branch = main
