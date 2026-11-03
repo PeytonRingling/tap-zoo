@@ -157,9 +157,10 @@ fun MenuScreen(modes: List<Mode>, onPick: (Mode) -> Unit) {
 }
 
 @Composable
-fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> Unit, onExit: () -> Unit, onKidLock: (Boolean) -> Unit = {}, onMusic: (Boolean) -> Unit = {}, onBalloonMusic: (Boolean) -> Unit = {}) {
-  var mus by remember { mutableStateOf(Prefs.menuMusic) }
-  var bmus by remember { mutableStateOf(Prefs.balloonMusic) }
+fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> Unit, onExit: () -> Unit, onKidLock: (Boolean) -> Unit = {},
+                  onMusicSlots: (Set<MusicSlot>) -> Unit = {}, onMusicVolume: (Int) -> Unit = {}) {
+  var slots by remember { mutableStateOf(Prefs.musicSlots) }
+  var mvol by remember { mutableIntStateOf(Prefs.musicVolume) }
   var bed by remember { mutableIntStateOf(Prefs.bedtimeMinutes) }
   val ctx = androidx.compose.ui.platform.LocalContext.current
   val picker = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia(20)) { uris -> if (uris.isNotEmpty()) Photos.add(ctx, uris) }
@@ -174,26 +175,22 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
       verticalArrangement = Arrangement.spacedBy(14.dp)) {
       BasicText("Parent settings", style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color(0xFF222233)))
       UpdatesRow(label)
-      BasicText("Volume", style = label)
-      Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
-        for (i in 0..5) Box(Modifier.size(44.dp, (18 + i * 9).dp).background(if (i == 0) (if (vol == 0) Color(0xFFFF5D5D) else Color(0xFFF2C4C4)) else if (i <= vol) Color(0xFF4D96FF) else Color(0xFFDDDDE6), RoundedCornerShape(10.dp))
-          .clickable { vol = i; Prefs.volume = i; Audio.volume = Prefs.volumeGain(i); BgMusic.refresh(); Audio.play(Sfx.chime) })
-        BasicText(if (vol == 0) "Muted" else "${vol * 20}%", style = label)
-      }
+      BasicText("Sound effects volume", style = label)
+      VolumeBars(vol, label) { i -> vol = i; Prefs.volume = i; Audio.volume = Prefs.volumeGain(i); Audio.play(Sfx.chime) }
+      BasicText("Music volume", style = label)
+      VolumeBars(mvol, label) { i -> mvol = i; Prefs.musicVolume = i; BgMusic.musicGain = Prefs.volumeGain(i); BgMusic.refresh(); onMusicVolume(i) }
       Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         BasicText("Vibration on taps", style = label)
         Box(Modifier.size(64.dp, 36.dp).background(if (hap) Color(0xFF6BCB77) else Color(0xFFCCCCD6), RoundedCornerShape(18.dp)).clickable { hap = !hap; Prefs.haptics = hap; Fx.haptics = hap; Fx.tap() },
           contentAlignment = if (hap) Alignment.CenterEnd else Alignment.CenterStart) { Box(Modifier.padding(4.dp).size(28.dp).background(Color.White, RoundedCornerShape(14.dp))) }
       }
-      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        BasicText("Menu music", style = label)
-        Box(Modifier.size(64.dp, 36.dp).background(if (mus) Color(0xFF6BCB77) else Color(0xFFCCCCD6), RoundedCornerShape(18.dp)).clickable { mus = !mus; Prefs.menuMusic = mus; onMusic(mus) },
-          contentAlignment = if (mus) Alignment.CenterEnd else Alignment.CenterStart) { Box(Modifier.padding(4.dp).size(28.dp).background(Color.White, RoundedCornerShape(14.dp))) }
-      }
-      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        BasicText("Balloon game music", style = label)
-        Box(Modifier.size(64.dp, 36.dp).background(if (bmus) Color(0xFF6BCB77) else Color(0xFFCCCCD6), RoundedCornerShape(18.dp)).clickable { bmus = !bmus; Prefs.balloonMusic = bmus; onBalloonMusic(bmus) },
-          contentAlignment = if (bmus) Alignment.CenterEnd else Alignment.CenterStart) { Box(Modifier.padding(4.dp).size(28.dp).background(Color.White, RoundedCornerShape(14.dp))) }
+      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        BasicText("Music in", style = label)
+        for (sl in MusicSlot.entries) { val on = sl in slots
+          Box(Modifier.background(if (on) Color(0xFF6BCB77) else Color(0xFFE4E2F2), RoundedCornerShape(14.dp))
+            .clickable { slots = if (on) slots - sl else slots + sl; Prefs.musicSlots = slots; onMusicSlots(slots) }.padding(horizontal = 14.dp, vertical = 8.dp)) {
+            BasicText((if (on) "♪ " else "") + sl.label, style = label.copy(color = if (on) Color.White else Color(0xFF333344))) }
+        }
       }
       Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         BasicText("Bedtime timer", style = label)
@@ -241,6 +238,16 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
       BasicText("Hold the house 1.5 s to go back to the menu; hold the gear 3 s for this panel. Kid lock pins Tap Zoo to the screen: first time, Android asks to confirm. Turn on Settings › Security & privacy › More security & privacy › App pinning, and 'Ask for PIN before unpinning'. Exit app here unpins it. No ads, no data collected; the internet is used only when you tap Check for updates here.",
         style = TextStyle(fontSize = 13.sp, color = Color(0xFF666677)))
     }
+  }
+}
+
+/** Six bars, 0 = muted (red). */
+@Composable
+private fun VolumeBars(value: Int, label: TextStyle, onPick: (Int) -> Unit) {
+  Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
+    for (i in 0..5) Box(Modifier.size(44.dp, (18 + i * 9).dp).background(if (i == 0) (if (value == 0) Color(0xFFFF5D5D) else Color(0xFFF2C4C4)) else if (i <= value) Color(0xFF4D96FF) else Color(0xFFDDDDE6), RoundedCornerShape(10.dp))
+      .clickable { onPick(i) })
+    BasicText(if (value == 0) "Muted" else "${value * 20}%", style = label)
   }
 }
 
