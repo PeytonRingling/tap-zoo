@@ -22,3 +22,10 @@ Sources: the Google Play listing (com.appquiz.baby.ballons), the App Store listi
 - Music (v8, since replaced by "Monkeys Spinning Monkeys", see SOUND_CREDITS.md): an original track (tools/balloon_music.py, removed), at 116 BPM in F major with a light swing feel. It has marimba melody, glockenspiel accents, a plucked-ukulele off-beat strum, bouncy bass, shaker and soft claps.
   - The track is 16 bars, about 33 s. Note tails wrap around to the start so the loop is seamless.
   - It plays the whole time in Balloons and dips only lightly (to 70%) under pops. It follows the volume setting and has the parent toggle "Balloon game music" (default on).
+
+## Overhaul (PR D, 2026-11)
+Default is now a gentle stream that keeps 6-12 balloons on screen (Parent settings › "Balloons keep coming"; off = the classic mode
+above). New: heart, foil-star and animal-face balloons, a squash-then-burst with a comic starburst, see-through animal balloons whose
+animal parachutes down with its sound, a golden star balloon, a giant rainbow balloon every 25-40 s that bursts into 7 minis, pops in a
+quick run climbing the G-major pentatonic scale (the key of the Balloons music) with a ta-da at 5 in a row, and an idle wiggle + a
+two-balloon auto-show at 20 s that stops after 90 s without a touch. Still no score and nothing to lose.
