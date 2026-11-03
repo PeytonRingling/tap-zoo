@@ -19,6 +19,6 @@ Sources: the Google Play listing (com.appquiz.baby.ballons), the App Store listi
 - If the sky is ever empty for 2.5 s, one balloon rises from the bottom and settles in the middle.
 - Tap or drag-swipe pops: a rubber-scrap burst, confetti, stars, a pop sound, a random cheerful xylophone note and a haptic tick.
 - Kept from before: shapes/letters on balloons (optional), family photos every 4th pop (optional), an animal on a balloon every 6th pop, the hint hand after 5 s idle, kid lock, and the animal parade.
-- Music: an original track, "music_balloons.ogg" (tools/balloon_music.py), at 116 BPM in F major with a light swing feel. It has marimba melody, glockenspiel accents, a plucked-ukulele off-beat strum, bouncy bass, shaker and soft claps.
+- Music (v8, since replaced by "Monkeys Spinning Monkeys", see SOUND_CREDITS.md): an original track (tools/balloon_music.py, removed), at 116 BPM in F major with a light swing feel. It has marimba melody, glockenspiel accents, a plucked-ukulele off-beat strum, bouncy bass, shaker and soft claps.
   - The track is 16 bars, about 33 s. Note tails wrap around to the start so the loop is seamless.
   - It plays the whole time in Balloons and dips only lightly (to 70%) under pops. It follows the volume setting and has the parent toggle "Balloon game music" (default on).

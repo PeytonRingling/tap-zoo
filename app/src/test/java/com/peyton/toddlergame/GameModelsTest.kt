@@ -50,6 +50,14 @@ class GameModelsTest {
     assertEquals(2, s.plays.size); assertEquals(listOf(true), s.haptics)
   }
 
+  @Test fun popSoundIsPitchedByBalloonSize() {
+    val sizes = ArrayList<Float>(); val pop = FloatArray(10)
+    val s = FakeSink(); val m = BalloonModel(s, Random(3)) { sizes += it; pop }; m.w = W; m.h = H; m.advance(0.5f)
+    repeat(3) { val b = m.balloons.first { !it.leaving }; m.pop(b) }
+    assertEquals(3, sizes.size); sizes.forEach { assertTrue("size $it in 0..1", it in 0f..1f) }
+    assertEquals(3, s.plays.count { it.data === pop })
+  }
+
   @Test fun everySixthPopReleasesAnAnimalWithItsSound() {
     val (m, s) = balloons(); m.advance(0.5f)
     repeat(6) { m.t += 0.2f; val b = m.balloons.first { !it.leaving }; m.pop(b); if (m.balloons.none { !it.leaving }) m.make(W / 2, H / 2) }
