@@ -34,14 +34,24 @@ enum class Mode { BALLOONS, ANIMALS, AQUARIUM, BUBBLES, VEHICLES, GARDEN, DRUMS,
 
 object Prefs {
   private var sp: android.content.SharedPreferences? = null
-  fun init(c: Context) { sp = c.getSharedPreferences("toddler", Context.MODE_PRIVATE) }
+  fun init(c: Context) {
+    sp = c.getSharedPreferences("toddler", Context.MODE_PRIVATE)
+    // Music volume used to be the single volume: pin it once so changing sound effects later doesn't move the music.
+    sp?.let { p -> if (!p.contains("mvol")) p.edit().putInt("mvol", volume).apply() }
+  }
   var volume: Int get() = sp?.getInt("vol", 4) ?: 4; set(v) { sp?.edit()?.putInt("vol", v)?.apply() }
   var haptics: Boolean get() = sp?.getBoolean("hap", true) ?: true; set(v) { sp?.edit()?.putBoolean("hap", v)?.apply() }
   var enabled: Set<Mode>
     get() = sp?.getStringSet("modes", null)?.mapNotNull { runCatching { Mode.valueOf(it) }.getOrNull() }?.toSet()?.ifEmpty { null } ?: Mode.entries.toSet()
     set(v) { sp?.edit()?.putStringSet("modes", v.map { it.name }.toSet())?.apply() }
-  var menuMusic: Boolean get() = sp?.getBoolean("mmus", true) ?: true; set(v) { sp?.edit()?.putBoolean("mmus", v)?.apply() }
-  var balloonMusic: Boolean get() = sp?.getBoolean("bmus", true) ?: true; set(v) { sp?.edit()?.putBoolean("bmus", v)?.apply() }
+  /** Where music plays. First read migrates the old `mmus`/`bmus` switches (see [MusicDirector.migrate]); they're no longer written. */
+  var musicSlots: Set<MusicSlot>
+    get() { val p = sp ?: return MusicSlot.entries.toSet()
+      return MusicDirector.migrate(p.getStringSet("musslots", null),
+        if (p.contains("mmus")) p.getBoolean("mmus", true) else null, if (p.contains("bmus")) p.getBoolean("bmus", true) else null) }
+    set(v) { sp?.edit()?.putStringSet("musslots", v.map { it.name }.toSet())?.apply() }
+  /** Music volume 0..5. Until a parent sets it, it follows the old single volume so loudness doesn't change on update. */
+  var musicVolume: Int get() = sp?.getInt("mvol", volume) ?: volume; set(v) { sp?.edit()?.putInt("mvol", v)?.apply() }
   var bedtimeMinutes: Int get() = sp?.getInt("bedmin", 15) ?: 15; set(v) { sp?.edit()?.putInt("bedmin", v)?.apply() }
   var kidLock: Boolean get() = sp?.getBoolean("klock", true) ?: true; set(v) { sp?.edit()?.putBoolean("klock", v)?.apply() }
   var balloonSymbols: Boolean get() = sp?.getBoolean("bsym", true) ?: true; set(v) { sp?.edit()?.putBoolean("bsym", v)?.apply() }

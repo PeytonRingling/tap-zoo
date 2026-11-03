@@ -8,6 +8,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.WindowManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,26 +36,44 @@ import java.util.UUID
 import kotlin.math.*
 import kotlin.random.Random
 
-/** Looping background music (original, composed in tools/music.py). Ducks under tap sounds. */
+/** Looping background music (which track where: [MusicDirector]). Ducks smoothly under tap sounds ([Ducker]).
+ *  Tracks are loaded by resource name, so a missing file is silence, never a crash. Main thread only, except [duck]. */
 object BgMusic {
-  private var mp: MediaPlayer? = null; private var cur = 0
-  private var base = 0.25f; private var duckK = 1f; private var fadeK = 1f
+  private var mp: MediaPlayer? = null
+  /** Resource name of the current track ("" = none). Read by tests. */
+  var currentName = ""; private set
+  private var base = 0.25f; private var fadeK = 1f
+  /** Music volume (Parent settings), separate from the sound-effects volume in [Audio.volume]. */
+  @Volatile var musicGain = 0.8f
+  internal val ducker = Ducker()
   private val h by lazy { Handler(Looper.getMainLooper()) }
-  private val unduck = Runnable { duckK = 1f; apply() }
-  fun play(c: Context, res: Int, level: Float) {
-    if (cur == res && mp != null) { base = level; apply(); if (mp?.isPlaying == false) mp?.start(); return }
-    stop(); fadeK = 1f
-    mp = try { MediaPlayer.create(c, res)?.apply { isLooping = true } } catch (_: Exception) { null }
-    cur = res; base = level; apply(); try { mp?.start() } catch (_: Exception) {}
+  private var lastTick = 0L; private var ticking = false
+  private val tick = object : Runnable { override fun run() {
+    val now = SystemClock.uptimeMillis()
+    val more = ducker.step(now, (now - lastTick).toFloat()); lastTick = now; apply()
+    if (more) h.postDelayed(this, 16) else ticking = false
+  } }
+
+  fun has(c: Context, name: String) = name.isNotEmpty() && c.resources.getIdentifier(name, "raw", c.packageName) != 0
+
+  internal fun play(c: Context, pick: MusicPick) {
+    ducker.depth = pick.duckDepth
+    if (currentName == pick.name && mp != null) { base = pick.level; apply(); try { if (mp?.isPlaying == false) mp?.start() } catch (_: Exception) {}; return }
+    stop(); fadeK = 1f; ducker.reset()
+    val id = c.resources.getIdentifier(pick.name, "raw", c.packageName)
+    mp = if (id == 0) null else try { MediaPlayer.create(c, id)?.apply { isLooping = true } } catch (_: Exception) { null }
+    currentName = pick.name; base = pick.level; apply(); try { mp?.start() } catch (_: Exception) {}
   }
-  fun stop() { try { mp?.release() } catch (_: Exception) {}; mp = null; cur = 0 }
+  fun stop() { try { mp?.release() } catch (_: Exception) {}; mp = null; currentName = "" }
   fun pause() { try { mp?.pause() } catch (_: Exception) {} }
-  fun resume() { try { if (cur != 0) mp?.start() } catch (_: Exception) {} }
+  fun resume() { try { if (currentName.isNotEmpty()) mp?.start() } catch (_: Exception) {} }
   fun setFade(f: Float) { fadeK = f; apply() }
-  var duckDepth = 0.35f
-  fun duck() { h.post { duckK = duckDepth; apply(); h.removeCallbacks(unduck); h.postDelayed(unduck, 800) } }
+  /** Called from any thread whenever a sound effect starts. */
+  fun duck() { h.post { ducker.duck(SystemClock.uptimeMillis()); if (!ticking) { ticking = true; lastTick = SystemClock.uptimeMillis(); h.post(tick) } } }
   fun refresh() = apply()
-  private fun apply() { val v = (base * duckK * fadeK * Audio.volume).coerceIn(0f, 1f); try { mp?.setVolume(v, v) } catch (_: Exception) {} }
+  /** Volume actually sent to the player, for tests. */
+  internal fun level() = (base * ducker.k * fadeK * musicGain).coerceIn(0f, 1f)
+  private fun apply() { val v = level(); try { mp?.setVolume(v, v) } catch (_: Exception) {} }
 }
 
 /** Family photos chosen by a parent via the system Photo Picker; copied into app-private storage, never uploaded. */

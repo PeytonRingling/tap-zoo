@@ -14,7 +14,7 @@ Load sounds by name (`getIdentifier`), never `R.raw.animal_*`, so the build work
 
 ## Build / test
 ```bash
-./gradlew test             # GameTest, MixerTest, AudioOutputTest, GameModelsTest (logic) + ScreensTest (Robolectric renders -> screens/, git-ignored)
+./gradlew test             # GameTest, MixerTest, AudioOutputTest, GameModelsTest, MusicDirectorTest, BgMusicTest (logic) + ScreensTest (Robolectric renders -> screens/, git-ignored)
 ./gradlew assembleDebug    # the shipped APK -> app/build/outputs/apk/debug/app-debug.apk
 ```
 Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â€¦` or `ANDROID_HOME`).
@@ -22,6 +22,8 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â
 ## Hard rules
 * **Game models make sound only through `SoundSink`** (`GameSound` in the app, `FakeSink` in tests) and take an injectable
   `Random`, so their behaviour is unit-tested in GameModelsTest. Don't call `Audio.play`/`AnimalSounds.play`/`Fx.tap` from model code.
+* Background music: which track plays where is the `MusicDirector` table (pure, MusicDirectorTest); tracks load by name and a
+  missing one is silence. Music volume (`mvol`) and per-slot switches (`musslots`) are separate from the SFX volume (`vol`).
 * Audio: one output thread at a time (generation counter in `Audio`); the `Mixer` fades a stolen voice over 5 ms instead of cutting it.
 * **Never run the Android emulator.** It crashes the build box. Verify UI with the Robolectric renders.
 * **Signing:** must stay `~/.android/debug.keystore`, cert SHA-256 `65f0d4cb5041d1d60f2fbbb44d0bc73174de9ea1668be0038129630a6a4d113f`.

@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     Prefs.init(this); AnimalSounds.init(this)
     Thread { runCatching { Sfx.prewarm() } }.apply { name = "sfx-prewarm"; isDaemon = true; priority = Thread.MIN_PRIORITY }.start()
-    Audio.volume = Prefs.volumeGain(Prefs.volume); Fx.haptics = Prefs.haptics
+    Audio.volume = Prefs.volumeGain(Prefs.volume); BgMusic.musicGain = Prefs.volumeGain(Prefs.musicVolume); Fx.haptics = Prefs.haptics
     @Suppress("DEPRECATION") run { Fx.vib = getSystemService(Vibrator::class.java) }
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -82,18 +82,13 @@ fun App(start: String?, onExit: () -> Unit, onLock: (Boolean) -> Unit = {}) {
   var screen by remember { mutableStateOf(start?.let { runCatching { Mode.valueOf(it) }.getOrNull() }) }
   var settings by remember { mutableStateOf(start == "SETTINGS") }
   var enabled by remember { mutableStateOf(Prefs.enabled) }
-  var musicOn by remember { mutableStateOf(Prefs.menuMusic) }
-  var balloonMusicOn by remember { mutableStateOf(Prefs.balloonMusic) }
+  var musicSlots by remember { mutableStateOf(Prefs.musicSlots) }
+  var musicVol by remember { mutableIntStateOf(Prefs.musicVolume) }
   val ctx = androidx.compose.ui.platform.LocalContext.current
   LaunchedEffect(Unit) { Photos.load(ctx) }
-  LaunchedEffect(screen, musicOn, balloonMusicOn) {
-    BgMusic.duckDepth = if (screen == Mode.BALLOONS) 0.7f else 0.35f
-    when {
-      screen == Mode.BALLOONS && balloonMusicOn -> BgMusic.play(ctx, R.raw.music_balloons, 0.45f)
-      screen == Mode.BEDTIME -> BgMusic.play(ctx, R.raw.music_lullaby, 0.55f)
-      screen == null && musicOn -> BgMusic.play(ctx, R.raw.music_menu, 0.28f)
-      else -> BgMusic.stop()
-    }
+  LaunchedEffect(screen, musicSlots, musicVol) {
+    val pick = MusicDirector.trackFor(screen, musicSlots, musicVol) { BgMusic.has(ctx, it) }
+    if (pick != null) BgMusic.play(ctx, pick) else BgMusic.stop()
   }
   Box(Modifier.fillMaxSize()) {
     AnimatedContent(screen, transitionSpec = {
@@ -124,6 +119,6 @@ fun App(start: String?, onExit: () -> Unit, onLock: (Boolean) -> Unit = {}) {
     if (settings) SettingsPanel(enabled, onToggle = { mo ->
       val n = if (mo in enabled) enabled - mo else enabled + mo
       if (n.isNotEmpty()) { enabled = n; Prefs.enabled = n }
-    }, onClose = { settings = false; onLock(true) }, onExit = onExit, onKidLock = { on -> Prefs.kidLock = on; onLock(on) }, onMusic = { musicOn = it }, onBalloonMusic = { balloonMusicOn = it })
+    }, onClose = { settings = false; onLock(true) }, onExit = onExit, onKidLock = { on -> Prefs.kidLock = on; onLock(on) }, onMusicSlots = { musicSlots = it }, onMusicVolume = { musicVol = it })
   }
 }

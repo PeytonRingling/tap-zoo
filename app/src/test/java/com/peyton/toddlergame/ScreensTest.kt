@@ -49,7 +49,11 @@ class ScreensTest {
   @Test fun garden() = shot("07_garden_unfolded", "GARDEN")
   @Test fun drums() = shot("08_drums_unfolded", "DRUMS", listOf(0.3f to 0.3f, 0.6f to 0.8f))
   @Test fun animals() = shot("09_animals_unfolded", "ANIMALS", listOf(0.5f to 0.3f))
-  @Test fun bubbles() = shot("10_bubbles_unfolded", "BUBBLES", listOf(0.3f to 0.5f, 0.7f to 0.4f))
+  @Test fun bubbles() {
+    shot("10_bubbles_unfolded", "BUBBLES", listOf(0.3f to 0.5f, 0.7f to 0.4f))
+    // Bubbles now has music: its own track when packaged, else the Balloons one.
+    org.junit.Assert.assertTrue(BgMusic.currentName in setOf("music_bubbles", "music_balloons"))
+  }
   @Test fun peekaboo() = shot("11_peekaboo_unfolded", "PEEKABOO", listOf(0.25f to 0.7f))
   @Test fun paint() = shot("12_paint_unfolded", "PAINT", drag = true)
   @Test fun music() = shot("13_music_unfolded", "MUSIC", listOf(0.2f to 0.3f))
