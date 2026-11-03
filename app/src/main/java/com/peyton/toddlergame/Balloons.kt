@@ -55,39 +55,39 @@ fun DrawScope.drawBalloon(c: Offset, r: Float, color: Color, t: Float, phase: Fl
   }
 }
 
-private class Balloon(var x: Float, var y: Float, val r: Float, val color: Color, val phase: Float, var vx: Float, var vy: Float, val symbol: Int, val label: String) { var born = 0f; var leaving = false }
-private class SoapBubble(var x: Float, var y: Float, val r: Float, val phase: Float, var vy: Float) { var born = 0f }
-private class Floater(var x: Float, var y: Float, val critter: Critter, val t0: Float, val r: Float, val color: Color)
-private class PhotoFloat(var x: Float, var y: Float, val img: androidx.compose.ui.graphics.ImageBitmap, val t0: Float, val s: Float)
-private class Flash(val x: Float, val y: Float, val r: Float, val t0: Float, val color: Color)
+internal class Balloon(var x: Float, var y: Float, val r: Float, val color: Color, val phase: Float, var vx: Float, var vy: Float, val symbol: Int, val label: String) { var born = 0f; var leaving = false }
+internal class SoapBubble(var x: Float, var y: Float, val r: Float, val phase: Float, var vy: Float) { var born = 0f }
+internal class Floater(var x: Float, var y: Float, val critter: Critter, val t0: Float, val r: Float, val color: Color)
+internal class PhotoFloat(var x: Float, var y: Float, val img: androidx.compose.ui.graphics.ImageBitmap, val t0: Float, val s: Float)
+internal class Flash(val x: Float, val y: Float, val r: Float, val t0: Float, val color: Color)
 
 /** Classic tap-to-make / tap-to-pop play: touching empty sky blows up a balloon right under the finger;
  *  balloons drift gently and stay until popped; soap bubbles sometimes tag along. Nothing to win or lose. */
-private class BalloonModel {
+internal class BalloonModel(private val sink: SoundSink = GameSound, private val rnd: Random = Random.Default) {
   val balloons = ArrayList<Balloon>(); val bubbles = ArrayList<SoapBubble>(); val floaters = ArrayList<Floater>(); val photos = ArrayList<PhotoFloat>(); val flashes = ArrayList<Flash>()
   val parts = Particles(600).apply { gravity = 700f }
   var w = 1f; var h = 1f; var t = 0f; var lastTouch = 0f; var pops = 0; var lastSpawn = 0f; var emptySince = 0f; var started = false
   private val labels = ('A'..'Z').map { it.toString() } + (1..9).map { it.toString() }
-  private var colorIdx = Random.nextInt(9)
+  private var colorIdx = rnd.nextInt(9)
   val cap get() = (w * h / (min(w, h) * min(w, h) * 0.12f)).toInt().coerceIn(8, 16)
   fun make(x: Float, y: Float, rising: Boolean = false) {
-    val m = min(w, h); val r = m * (0.09f + Random.nextFloat() * 0.035f)
-    colorIdx = (colorIdx + 1 + Random.nextInt(3)) % Pal.vivid.size   // never the same color twice in a row
-    val sym = if (!Prefs.balloonSymbols) 0 else when (Random.nextInt(10)) { 0 -> 1; 1 -> 2; 2 -> 3; 3, 4 -> 4; else -> 0 }
+    val m = min(w, h); val r = m * (0.09f + rnd.nextFloat() * 0.035f)
+    colorIdx = (colorIdx + 1 + rnd.nextInt(3)) % Pal.vivid.size   // never the same color twice in a row
+    val sym = if (!Prefs.balloonSymbols) 0 else when (rnd.nextInt(10)) { 0 -> 1; 1 -> 2; 2 -> 3; 3, 4 -> 4; else -> 0 }
     val cx = x.coerceIn(r, w - r); val cy = y.coerceIn(r * 1.2f, h - r * 1.3f)
-    balloons += Balloon(cx, if (rising) h + r * 1.5f else cy, r, Pal.vivid[colorIdx], Random.nextFloat() * 6f,
-      (Random.nextFloat() - 0.5f) * m * 0.05f, if (rising) -h * 0.35f else -m * (0.01f + Random.nextFloat() * 0.02f), sym, labels.random()).also { it.born = t }
+    balloons += Balloon(cx, if (rising) h + r * 1.5f else cy, r, Pal.vivid[colorIdx], rnd.nextFloat() * 6f,
+      (rnd.nextFloat() - 0.5f) * m * 0.05f, if (rising) -h * 0.35f else -m * (0.01f + rnd.nextFloat() * 0.02f), sym, labels.random(rnd)).also { it.born = t }
     if (balloons.count { !it.leaving } > cap) balloons.filter { !it.leaving }.minByOrNull { it.born }?.let { it.leaving = true }
     lastSpawn = t
   }
   fun bubble(x: Float, y: Float) { val m = min(w, h)
-    bubbles += SoapBubble(x + (Random.nextFloat() - 0.5f) * m * 0.2f, y + (Random.nextFloat() - 0.5f) * m * 0.1f, m * (0.035f + Random.nextFloat() * 0.035f), Random.nextFloat() * 6f, -m * (0.08f + Random.nextFloat() * 0.06f)).also { it.born = t }
+    bubbles += SoapBubble(x + (rnd.nextFloat() - 0.5f) * m * 0.2f, y + (rnd.nextFloat() - 0.5f) * m * 0.1f, m * (0.035f + rnd.nextFloat() * 0.035f), rnd.nextFloat() * 6f, -m * (0.08f + rnd.nextFloat() * 0.06f)).also { it.born = t }
     if (bubbles.size > 10) bubbles.removeAt(0) }
   fun step(dt: Float) {
     if (w < 2f) return
     if (!started) { started = true; make(w * 0.5f, h * 0.5f); make(w * 0.28f, h * 0.62f); make(w * 0.72f, h * 0.4f); balloons.forEach { it.born = -1f } }
     // Never leave the toddler staring at an empty sky: a fresh balloon floats up and settles.
-    if (balloons.none { !it.leaving }) { if (emptySince < 0f) emptySince = t; if (t - emptySince > 2.5f) { make(w * (0.25f + Random.nextFloat() * 0.5f), h * 0.5f, rising = true); emptySince = -1f } } else emptySince = -1f
+    if (balloons.none { !it.leaving }) { if (emptySince < 0f) emptySince = t; if (t - emptySince > 2.5f) { make(w * (0.25f + rnd.nextFloat() * 0.5f), h * 0.5f, rising = true); emptySince = -1f } } else emptySince = -1f
     val m = min(w, h)
     for (b in balloons) {
       if (b.leaving) { b.vy -= h * 0.4f * dt; b.y += b.vy * dt; continue }
@@ -111,15 +111,15 @@ private class BalloonModel {
   }
   fun pop(b: Balloon) {
     balloons.remove(b); pops++
-    Audio.play(Sfx.balloonPop, 0.85f); Audio.play(Sfx.xylo[Random.nextInt(3, 10)], 0.35f); Fx.tap(true)
+    sink.play(Sfx.balloonPop, 0.85f); sink.play(Sfx.xylo[rnd.nextInt(3, 10)], 0.35f); sink.haptic(true)
     flashes += Flash(b.x, b.y, b.r, t, b.color)
     parts.burst(b.x, b.y, 12, listOf(b.color, b.color.darken(0.1f)), kind = 5, speed = b.r * 9f, size = b.r * 0.16f, up = 50f, decay = 1.6f)
     parts.burst(b.x, b.y, 30, Pal.vivid, kind = 4, speed = b.r * 11f, size = b.r * 0.1f, up = b.r * 3f, decay = 0.55f)
     parts.burst(b.x, b.y, 8, listOf(Color.White, Pal.sun), kind = 1, speed = b.r * 6f, size = b.r * 0.13f, up = 100f, decay = 1.2f)
-    if (Photos.images.isNotEmpty() && pops % 4 == 3 && photos.size < 2) { photos += PhotoFloat(b.x, b.y, Photos.images.random().second, t, min(w, h) * 0.3f); Audio.play(Sfx.chime, 0.4f) }
-    else if (pops % 6 == 5) { val cr = Critter.entries.random(); floaters += Floater(b.x, b.y, cr, t, b.r * 0.55f, Pal.vivid.random()); AnimalSounds.play(cr, 0.85f, delayMs = 250) }
+    if (Photos.images.isNotEmpty() && pops % 4 == 3 && photos.size < 2) { photos += PhotoFloat(b.x, b.y, Photos.images.random(rnd).second, t, min(w, h) * 0.3f); sink.play(Sfx.chime, 0.4f) }
+    else if (pops % 6 == 5) { val cr = Critter.entries.random(rnd); floaters += Floater(b.x, b.y, cr, t, b.r * 0.55f, Pal.vivid.random(rnd)); sink.animal(cr, 0.85f, delayMs = 250) }
   }
-  fun popBubble(u: SoapBubble) { bubbles.remove(u); Audio.play(Sfx.bubblePop, 0.45f); Fx.tap()
+  fun popBubble(u: SoapBubble) { bubbles.remove(u); sink.play(Sfx.bubblePop, 0.45f); sink.haptic()
     parts.burst(u.x, u.y, 8, listOf(Color.White, Color(0xFFBFE6FF), Color(0xFFFFD6F5)), kind = 0, speed = u.r * 8f, size = u.r * 0.12f, up = 20f, decay = 2f) }
   fun tap(p: Offset) {
     lastTouch = t
@@ -128,8 +128,8 @@ private class BalloonModel {
     val u = bubbles.firstOrNull { hypot(it.x - p.x, it.y - p.y) < it.r * 1.6f }
     if (u != null) { popBubble(u); return }
     if (t - lastSpawn < 0.12f) return
-    make(p.x, p.y); Audio.play(Sfx.inflate, 0.4f); Fx.tap()
-    if (Random.nextInt(3) == 0) repeat(1 + Random.nextInt(2)) { bubble(p.x, p.y) }
+    make(p.x, p.y); sink.play(Sfx.inflate, 0.4f); sink.haptic()
+    if (rnd.nextInt(3) == 0) repeat(1 + rnd.nextInt(2)) { bubble(p.x, p.y) }
   }
 }
 

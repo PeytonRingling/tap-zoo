@@ -5,9 +5,10 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import kotlin.math.*
 
-/** All sounds are synthesized in code: no bundled audio assets. */
+/** Sound effects synthesized in code (animal clips and music are separate, see AnimalSounds/BgMusic). */
 object Sfx {
-  const val RATE = 22050
+  /** 44.1 kHz so short transients (pops, clicks) keep their high end; every sound is defined in Hz, so pitches are unchanged. */
+  const val RATE = 44100
   private val rnd = java.util.Random(7)
 
   fun tone(f0: Double, f1: Double, secs: Double, vib: Double = 0.0, vibRate: Double = 6.0, harm: Double = 0.3,
@@ -75,51 +76,128 @@ object Sfx {
   val xylo: List<FloatArray> by lazy { PENTA.map { f -> mix(tone(f * 2, f * 2, 0.5, harm = 0.05, decay = 9.0), tone(f * 8, f * 8, 0.3, harm = 0.0, decay = 16.0, gain = 0.2)) } }
   val march by lazy { seq(*listOf(67, 72, 76, 72, 79, 76, 72, 76, 79, 84).map { n -> seq(bell(440.0 * Math.pow(2.0, (n - 69) / 12.0), 0.22), silence(0.03)) }.toTypedArray()) }
   val whoosh by lazy { tone(400.0, 1600.0, 0.35, noise = 0.6, decay = 1.0, gain = 0.5) }
+
+  /** Synthesizes every lazy sound up front (call off the main thread at startup) so the first tap in a mode doesn't stall
+   *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
+  fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
+    listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, flutter, zoom, kick, tom, snare, cymbal, march, whoosh)
 }
 
-/** One streaming AudioTrack with a small software mixer; voices capped so chaos stays pleasant. */
-object Audio {
-  private class Voice(val data: FloatArray, val gain: Float) { var pos = 0 }
+/** Pure software mixer (no Android types, unit-tested). Voices are capped so chaos stays pleasant; when a new sound would
+ *  exceed the cap, the oldest voice is faded out over [fadeFrames] instead of being cut mid-waveform (which clicks). */
+internal class Mixer(val maxVoices: Int, val fadeFrames: Int) {
+  private class Voice(val data: FloatArray, val gain: Float) { var pos = 0; var fadeLeft = -1 }
   private val voices = ArrayList<Voice>()
+
+  fun add(data: FloatArray, gain: Float) = synchronized(voices) {
+    if (data.isEmpty()) return@synchronized
+    val live = voices.filter { it.fadeLeft < 0 }
+    if (live.size >= maxVoices) live.first().fadeLeft = fadeFrames
+    // Rapid stealing could pile up fading voices: keep at most maxVoices of them, dropping the most-faded first.
+    while (voices.count { it.fadeLeft >= 0 } > maxVoices) voices.remove(voices.filter { it.fadeLeft >= 0 }.minBy { it.fadeLeft })
+    voices.add(Voice(data, gain))
+  }
+  fun clear() = synchronized(voices) { voices.clear() }
+  /** Voices that are playing and not being faded out. */
+  fun active(): Int = synchronized(voices) { voices.count { it.fadeLeft < 0 } }
+  /** All voices still producing sound, including ones fading out. */
+  fun total(): Int = synchronized(voices) { voices.size }
+
+  /** Mixes the next [out].size frames into [out] (overwritten) only while [keepGoing] holds, checked under the voice lock so a
+   *  stale output thread can never consume voices. Returns false (and leaves voices untouched) when it doesn't. */
+  fun render(out: FloatArray, keepGoing: () -> Boolean = { true }): Boolean = synchronized(voices) {
+    if (!keepGoing()) return@synchronized false
+    out.fill(0f)
+    val frames = out.size
+    val it = voices.iterator()
+    while (it.hasNext()) {
+      val v = it.next()
+      var n = min(frames, v.data.size - v.pos)
+      if (v.fadeLeft >= 0) n = min(n, v.fadeLeft)
+      for (i in 0 until n) {
+        val g = if (v.fadeLeft >= 0) v.gain * (v.fadeLeft - i).toFloat() / fadeFrames else v.gain
+        out[i] += v.data[v.pos + i] * g
+      }
+      v.pos += n
+      if (v.fadeLeft >= 0) v.fadeLeft -= n
+      if (v.pos >= v.data.size || v.fadeLeft == 0) it.remove()
+    }
+    true
+  }
+}
+
+/** Where mixed PCM goes. The real one is an AudioTrack; tests use a fake. */
+internal interface PcmOut { fun write(buf: ShortArray, frames: Int); fun close() }
+
+/** One streaming output thread fed by [Mixer]. A generation counter guarantees that at most one output thread mixes at a time,
+ *  even when stop()/start() race (fast pause/resume): a stale thread sees a newer generation and exits without touching voices. */
+object Audio {
   const val MAX_VOICES = 6
+  const val FRAMES = 256
+  internal val mixer = Mixer(MAX_VOICES, fadeFrames = Sfx.RATE / 200) // 5 ms fade on voice steal
   @Volatile var volume = 0.8f
   @Volatile private var running = false
+  @Volatile internal var generation = 0; private set
+  /** Builds the output for a sample rate. Swapped in tests; a failure here must never crash the app. */
+  internal var openOutput: (rate: Int) -> PcmOut = ::audioTrackOut
+  internal var thread: Thread? = null; private set
 
-  fun start() {
-    if (running) return
+  fun start() = synchronized(this) {
+    if (running) return@synchronized
     running = true
-    Thread {
-      val rate = Sfx.RATE
-      val min = AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
-      val track = AudioTrack.Builder()
-        .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
-        .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(rate).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
-        .setBufferSizeInBytes(max(min, 2048)).setTransferMode(AudioTrack.MODE_STREAM)
-        .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY).build()
-      track.play()
-      val frames = 256; val buf = ShortArray(frames); val mixBuf = FloatArray(frames)
-      while (running) {
-        mixBuf.fill(0f)
-        synchronized(voices) {
-          val it = voices.iterator()
-          while (it.hasNext()) {
-            val v = it.next(); val n = min(frames, v.data.size - v.pos)
-            for (i in 0 until n) mixBuf[i] += v.data[v.pos + i] * v.gain
-            v.pos += n; if (v.pos >= v.data.size) it.remove()
-          }
-        }
-        val vol = volume
-        for (i in 0 until frames) buf[i] = (tanh(mixBuf[i] * vol) * 32000f).toInt().toShort()
-        track.write(buf, 0, frames)
-      }
-      track.stop(); track.release()
-    }.apply { priority = Thread.MAX_PRIORITY; name = "toddler-audio" }.start()
+    val my = ++generation
+    thread = Thread { runOutput(my) }.apply { priority = Thread.MAX_PRIORITY; name = "toddler-audio"; isDaemon = true; start() }
   }
-  fun stop() { running = false; synchronized(voices) { voices.clear() } }
+  fun stop() { synchronized(this) { running = false; generation++ }; mixer.clear() }
+  fun isRunning() = running
+
+  private fun runOutput(my: Int) {
+    val out = try { openOutput(Sfx.RATE) } catch (_: Throwable) { null }
+    if (out == null) { synchronized(this) { if (generation == my) running = false }; return }
+    try {
+      val buf = ShortArray(FRAMES); val mixBuf = FloatArray(FRAMES)
+      while (pump(my, mixBuf, buf)) out.write(buf, FRAMES)
+    } catch (_: Throwable) {
+      synchronized(this) { if (generation == my) running = false }
+    } finally { try { out.close() } catch (_: Throwable) {} }
+  }
+  /** One block: mix (only if generation [my] is still current) and convert with soft clipping. False = this thread should exit. */
+  internal fun pump(my: Int, mixBuf: FloatArray, buf: ShortArray): Boolean {
+    if (!mixer.render(mixBuf) { generation == my && running }) return false
+    val vol = volume
+    for (i in mixBuf.indices) buf[i] = (tanh(mixBuf[i] * vol) * 32000f).toInt().toShort()
+    return true
+  }
   fun play(data: FloatArray, gain: Float = 0.7f) {
     if (volume <= 0f) return
     BgMusic.duck()
-    synchronized(voices) { if (voices.size >= MAX_VOICES) voices.removeAt(0); voices.add(Voice(data, gain)) }
+    mixer.add(data, gain)
   }
-  fun activeVoices() = synchronized(voices) { voices.size }
+  fun activeVoices() = mixer.active()
+}
+
+private fun audioTrackOut(rate: Int): PcmOut {
+  val min = AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
+  val track = AudioTrack.Builder()
+    .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+    .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(rate).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+    .setBufferSizeInBytes(max(min, 4096)).setTransferMode(AudioTrack.MODE_STREAM)
+    .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY).build()
+  track.play()
+  return object : PcmOut {
+    override fun write(buf: ShortArray, frames: Int) { track.write(buf, 0, frames) }
+    override fun close() { try { track.stop() } catch (_: Exception) {}; track.release() }
+  }
+}
+
+/** What game models use to make sound and haptics. The app uses [GameSound]; tests record calls instead. */
+interface SoundSink {
+  fun play(data: FloatArray, gain: Float = 0.7f)
+  fun animal(k: Critter, gain: Float = 1f, delayMs: Long = 0)
+  fun haptic(strong: Boolean = false)
+}
+object GameSound : SoundSink {
+  override fun play(data: FloatArray, gain: Float) = Audio.play(data, gain)
+  override fun animal(k: Critter, gain: Float, delayMs: Long) = AnimalSounds.play(k, gain, delayMs)
+  override fun haptic(strong: Boolean) = Fx.tap(strong)
 }

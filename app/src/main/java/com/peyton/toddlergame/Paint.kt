@@ -12,22 +12,22 @@ import androidx.compose.ui.graphics.StrokeCap
 import kotlin.math.*
 import kotlin.random.Random
 
-private class Pt(val x: Float, val y: Float, val t: Float, val hue: Float)
-private class Trail(var hue: Float) { val pts = ArrayList<Pt>(); var lastNoteT = -1f; var noteX = 0f; var noteY = 0f; var done = false }
+internal class Pt(val x: Float, val y: Float, val t: Float, val hue: Float)
+internal class Trail(var hue: Float) { val pts = ArrayList<Pt>(); var lastNoteT = -1f; var noteX = 0f; var noteY = 0f; var done = false }
 
-private class PaintModel {
+internal class PaintModel(private val sink: SoundSink = GameSound, private val rnd: Random = Random.Default) {
   val trails = ArrayList<Trail>(); val active = HashMap<Long, Trail>()
   val parts = Particles().apply { gravity = -60f }
-  val stars = List(70) { Offset(Random.nextFloat(), Random.nextFloat()) }
+  val stars = List(70) { Offset(rnd.nextFloat(), rnd.nextFloat()) }
   var w = 1f; var h = 1f; var t = 0f; var lastTouch = 0f; var hueSeed = 0f
   fun note(tr: Trail, p: Offset) {
     val idx = ((1 - p.y / h) * Sfx.PENTA.size).toInt().coerceIn(0, Sfx.PENTA.size - 1)
-    Audio.play(Sfx.bells[idx], 0.35f); tr.lastNoteT = t; tr.noteX = p.x; tr.noteY = p.y
+    sink.play(Sfx.bells[idx], 0.35f); tr.lastNoteT = t; tr.noteX = p.x; tr.noteY = p.y
   }
   fun down(id: Long, p: Offset) {
     lastTouch = t; hueSeed = (hueSeed + 47f) % 360f
     val tr = Trail(hueSeed); tr.pts += Pt(p.x, p.y, t, tr.hue); trails += tr; active[id] = tr
-    note(tr, p); Fx.tap(); parts.burst(p.x, p.y, 10, kind = 1, speed = 350f, size = 14f, up = 0f, decay = 1.2f)
+    note(tr, p); sink.haptic(); parts.burst(p.x, p.y, 10, kind = 1, speed = 350f, size = 14f, up = 0f, decay = 1.2f)
   }
   fun move(id: Long, p: Offset) {
     lastTouch = t
@@ -35,7 +35,7 @@ private class PaintModel {
     val d = hypot(p.x - last.x, p.y - last.y); if (d < 5f) return
     tr.hue = (tr.hue + d * 0.3f) % 360f; tr.pts += Pt(p.x, p.y, t, tr.hue)
     if (hypot(p.x - tr.noteX, p.y - tr.noteY) > min(w, h) * 0.08f && t - tr.lastNoteT > 0.11f) note(tr, p)
-    if (Random.nextFloat() < 0.35f) parts.burst(p.x, p.y, 1, listOf(Color.hsv(tr.hue, 0.5f, 1f), Color.White), kind = 1, speed = 120f, size = 10f, up = 0f, decay = 1.3f)
+    if (rnd.nextFloat() < 0.35f) parts.burst(p.x, p.y, 1, listOf(Color.hsv(tr.hue, 0.5f, 1f), Color.White), kind = 1, speed = 120f, size = 10f, up = 0f, decay = 1.3f)
   }
   fun up(id: Long) { active.remove(id)?.done = true }
   fun step(dt: Float) {
