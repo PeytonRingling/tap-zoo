@@ -17,6 +17,12 @@ class GameTest {
     assertEquals(Critter.entries.size, Sfx.animal.size)
     all.forEach { s -> assertTrue(s.isNotEmpty()); assertTrue(s.all { it.isFinite() && kotlin.math.abs(it) <= 1.5f }) }
   }
+  @Test fun prewarmCoversEverySoundAtTheNewRate() {
+    val all = Sfx.prewarm()
+    assertEquals(Critter.entries.size + 10 + 10 + 4 + 19, all.size)
+    all.forEach { s -> assertTrue(s.isNotEmpty()); assertTrue(s.all { it.isFinite() && kotlin.math.abs(it) <= 1.5f }) }
+    assertEquals(44100, Sfx.RATE); assertEquals((Sfx.RATE * 0.9).toInt(), Sfx.bells[0].size)   // durations in seconds unchanged
+  }
   @Test fun pentatonicAscending() { for (i in 1 until Sfx.PENTA.size) assertTrue(Sfx.PENTA[i] > Sfx.PENTA[i - 1]) }
   @Test fun particlesCapped() { val p = Particles(50); repeat(10) { p.burst(0f, 0f, 30) }; assertEquals(50, p.list.size); repeat(200) { p.step(0.05f) }; assertTrue(p.list.isEmpty()) }
 }

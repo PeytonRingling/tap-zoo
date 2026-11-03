@@ -31,8 +31,8 @@ fun DrawScope.drawShape(kind: Int, c: Offset, r: Float, color: Color) {
   }
 }
 
-private class Ripple(val x: Float, val y: Float, val t0: Float, val color: Color)
-private class MusicModel {
+internal class Ripple(val x: Float, val y: Float, val t0: Float, val color: Color)
+internal class MusicModel(private val sink: SoundSink = GameSound) {
   val hit = FloatArray(8) { -10f }; val ripples = ArrayList<Ripple>(); val finger = HashMap<Long, Int>()
   val parts = Particles().apply { gravity = -350f }
   var w = 1f; var h = 1f; var t = 0f; var lastTouch = 0f
@@ -42,7 +42,7 @@ private class MusicModel {
     val i = rects().indexOfFirst { it.contains(p) }
     if (i < 0 || (!fresh && finger[id] == i)) return
     finger[id] = i; hit[i] = t
-    Audio.play(Sfx.bells[i + 1], 0.6f); Fx.tap()
+    sink.play(Sfx.bells[i + 1], 0.6f); sink.haptic()
     ripples += Ripple(p.x, p.y, t, RAINBOW[i])
     parts.burst(p.x, p.y, 3, listOf(Color.White, RAINBOW[i]), kind = 3, speed = 250f, size = min(w, h) * 0.03f, up = 300f, decay = 0.8f)
   }

@@ -12,19 +12,19 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.math.*
 import kotlin.random.Random
 
-private class Bub(var x: Float, var y: Float, val r: Float, val color: Color, val phase: Float, val golden: Boolean, val speed: Float)
-private class Ring(val x: Float, val y: Float, val r: Float, val t0: Float, val color: Color)
-private class Pending(val b: Bub, val at: Float, val level: Int)
+internal class Bub(var x: Float, var y: Float, val r: Float, val color: Color, val phase: Float, val golden: Boolean, val speed: Float)
+internal class Ring(val x: Float, val y: Float, val r: Float, val t0: Float, val color: Color)
+internal class Pending(val b: Bub, val at: Float, val level: Int)
 
-private class BubbleModel {
+internal class BubbleModel(private val sink: SoundSink = GameSound, private val rnd: Random = Random.Default) {
   val bubs = ArrayList<Bub>(); val rings = ArrayList<Ring>(); val pending = ArrayList<Pending>()
   val parts = Particles().apply { gravity = 600f }
   var w = 1f; var h = 1f; var t = 0f; var lastTouch = 0f
   fun spawn(atBottom: Boolean = true, x: Float? = null, y: Float? = null, rr: Float? = null) {
-    val m = min(w, h); val golden = rr == null && Random.nextFloat() < 0.07f
-    val r = rr ?: (if (golden) m * 0.13f else m * (0.05f + Random.nextFloat() * Random.nextFloat() * 0.13f))
-    bubs += Bub(x ?: (r + Random.nextFloat() * (w - 2 * r)), y ?: (if (atBottom) h + r + Random.nextFloat() * h * 0.3f else Random.nextFloat() * h),
-      r, if (golden) Color(0xFFFFC83D) else RAINBOW.random(), Random.nextFloat() * 6f, golden, h * (0.06f + 0.1f * (1 - r / (m * 0.18f))))
+    val m = min(w, h); val golden = rr == null && rnd.nextFloat() < 0.07f
+    val r = rr ?: (if (golden) m * 0.13f else m * (0.05f + rnd.nextFloat() * rnd.nextFloat() * 0.13f))
+    bubs += Bub(x ?: (r + rnd.nextFloat() * (w - 2 * r)), y ?: (if (atBottom) h + r + rnd.nextFloat() * h * 0.3f else rnd.nextFloat() * h),
+      r, if (golden) Color(0xFFFFC83D) else RAINBOW.random(rnd), rnd.nextFloat() * 6f, golden, h * (0.06f + 0.1f * (1 - r / (m * 0.18f))))
   }
   fun step(dt: Float) {
     if (w < 2f) return
@@ -42,9 +42,9 @@ private class BubbleModel {
     rings += Ring(b.x, b.y, b.r, t, b.color)
     parts.burst(b.x, b.y, (8 + b.r / 8).toInt().coerceAtMost(30), listOf(b.color, Color.White), speed = b.r * 6f, size = b.r * 0.12f, up = 100f, decay = 1.8f)
     val m = min(w, h)
-    Audio.play(Sfx.pop(1500.0 * sqrt(m * 0.08 / b.r) * 1.12.pow(level)), 0.6f)
+    sink.play(Sfx.pop(1500.0 * sqrt(m * 0.08 / b.r) * 1.12.pow(level)), 0.6f)
     if (b.golden) {
-      Audio.play(Sfx.chime, 0.5f); parts.burst(b.x, b.y, 20, kind = 1, speed = 900f, size = m * 0.025f)
+      sink.play(Sfx.chime, 0.5f); parts.burst(b.x, b.y, 20, kind = 1, speed = 900f, size = m * 0.025f)
       repeat(7) { val a = it * 2 * PI / 7; spawn(x = b.x + (cos(a) * b.r).toFloat(), y = b.y + (sin(a) * b.r).toFloat(), rr = m * 0.045f) }
     }
     if (level < 6) bubs.filter { hypot(it.x - b.x, it.y - b.y) < (it.r + b.r) * 1.15f && pending.none { p -> p.b === it } }
@@ -53,7 +53,7 @@ private class BubbleModel {
   fun tap(p: Offset) {
     lastTouch = t
     val b = bubs.lastOrNull { hypot(it.x - p.x, it.y - p.y) < it.r * 1.25f + 20f }
-    if (b != null) { Fx.tap(); pop(b, 0) } else parts.burst(p.x, p.y, 5, listOf(Color.White), speed = 200f, size = 8f)
+    if (b != null) { sink.haptic(); pop(b, 0) } else parts.burst(p.x, p.y, 5, listOf(Color.White), speed = 200f, size = 8f)
   }
 }
 
