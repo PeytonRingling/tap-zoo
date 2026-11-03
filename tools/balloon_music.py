@@ -50,6 +50,6 @@ for bar,(r,iv) in enumerate(prog):
     for s in range(8): add(shaker(),t0+s*e,0.10 if s%2 else 0.05)
     for c in (1,3): add(clap(),t0+c*b,0.10)
 buf=np.tanh(buf/np.max(np.abs(buf))*1.3); buf=buf/np.max(np.abs(buf))*0.89
-with wave.open('balloons.wav','w') as w:
+with wave.open('balloons.wav','w') as w:  # scratch render (git-ignored); encode to res/raw/music_balloons.ogg
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((buf*32767).astype('<i2').tobytes())
 print(L/SR,'s')

@@ -48,3 +48,6 @@ Thumbs.db
 
 # --- Generated Robolectric/Roborazzi renders (re-recorded on every test run) ---
 screens/
+
+# --- Rendered audio from tools/*.py (only the .ogg in res/raw ships) ---
+tools/*.wav
