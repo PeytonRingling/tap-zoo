@@ -12,17 +12,17 @@ class GameModelsTest {
 
   // ---------------------------------------------------------------- Balloons
   private fun balloons(seed: Int = 1): Pair<BalloonModel, FakeSink> {
-    val s = FakeSink(); val m = BalloonModel(s, Random(seed)); m.w = W; m.h = H; return m to s
+    val s = FakeSink(); val m = BalloonModel(s, Random(seed), stream = false); m.w = W; m.h = H; return m to s
   }
   private fun BalloonModel.advance(secs: Float, dt: Float = 1 / 60f) { var k = 0f; while (k < secs) { t += dt; step(dt); k += dt } }
   private fun BalloonModel.emptySpot(): Offset {
-    for (yy in 2..8) for (xx in 1..9) { val p = Offset(w * xx / 10f, h * yy / 10f)
+    for (yy in 2..8) for (xx in 2..8) { val p = Offset(w * xx / 10f, h * yy / 10f)
       if (balloons.none { kotlin.math.hypot(it.x - p.x, it.y - p.y) < it.r * 2.5f } && bubbles.none { kotlin.math.hypot(it.x - p.x, it.y - p.y) < it.r * 3f }) return p }
     error("no empty spot")
   }
 
   @Test fun balloonsWaitForTheScreenSize() {
-    val m = BalloonModel(FakeSink(), Random(1)); m.step(0.016f); assertTrue(m.balloons.isEmpty())
+    val m = BalloonModel(FakeSink(), Random(1), stream = false); m.step(0.016f); assertTrue(m.balloons.isEmpty())
   }
 
   @Test fun balloonsStartWithThree() { val (m, s) = balloons(); m.advance(0.1f); assertEquals(3, m.balloons.size); assertTrue(s.plays.isEmpty()) }
@@ -41,27 +41,22 @@ class GameModelsTest {
     assertEquals(n, m.balloons.size)
   }
 
-  @Test fun tappingABalloonPopsItWithPopAndOneXyloNote() {
-    val (m, s) = balloons(); m.advance(0.5f); val b = m.balloons.first()
+  @Test fun tappingABalloonPopsItWithPopAndOneInKeyNote() {
+    val (m, s) = balloons(); m.advance(0.5f); val b = m.make(W * 0.5f, H * 0.2f, kind = BKind.ROUND); s.clear(); m.t += 0.3f
     m.tap(Offset(b.x, b.y))
-    assertFalse(b in m.balloons); assertEquals(1, m.pops)
+    assertEquals(1, m.pops); assertFalse("squashing: no longer tappable", b.live)
     assertSame(Sfx.balloonPop, s.plays[0].data)
-    assertTrue("second sound is a xylophone note 3..9", (3..9).any { Sfx.xylo[it] === s.plays[1].data })
+    assertSame("first pop of a run = first note of the G pentatonic ladder", Sfx.comboNotes[0], s.plays[1].data)
     assertEquals(2, s.plays.size); assertEquals(listOf(true), s.haptics)
+    m.advance(0.1f); assertFalse("burst after the squash", b in m.balloons)
   }
 
   @Test fun popSoundIsPitchedByBalloonSize() {
     val sizes = ArrayList<Float>(); val pop = FloatArray(10)
-    val s = FakeSink(); val m = BalloonModel(s, Random(3)) { sizes += it; pop }; m.w = W; m.h = H; m.advance(0.5f)
-    repeat(3) { val b = m.balloons.first { !it.leaving }; m.pop(b) }
+    val s = FakeSink(); val m = BalloonModel(s, Random(3), { sizes += it; pop }, stream = false); m.w = W; m.h = H; m.advance(0.5f)
+    repeat(3) { val b = m.balloons.first { it.live }; m.pop(b) }
     assertEquals(3, sizes.size); sizes.forEach { assertTrue("size $it in 0..1", it in 0f..1f) }
     assertEquals(3, s.plays.count { it.data === pop })
-  }
-
-  @Test fun everySixthPopReleasesAnAnimalWithItsSound() {
-    val (m, s) = balloons(); m.advance(0.5f)
-    repeat(6) { m.t += 0.2f; val b = m.balloons.first { !it.leaving }; m.pop(b); if (m.balloons.none { !it.leaving }) m.make(W / 2, H / 2) }
-    assertEquals(1, s.animals.size); assertEquals(250L, s.animals[0].second); assertEquals(1, m.floaters.size)
   }
 
   @Test fun balloonCountNeverExceedsTheCap() {

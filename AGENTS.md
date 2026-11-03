@@ -14,7 +14,7 @@ Load sounds by name (`getIdentifier`), never `R.raw.animal_*`, so the build work
 
 ## Build / test
 ```bash
-./gradlew test             # GameTest, MixerTest, AudioOutputTest, GameModelsTest, MusicDirectorTest, BgMusicTest, SamplesTest (logic) + ScreensTest (Robolectric renders -> screens/, git-ignored)
+./gradlew test             # GameTest, MixerTest, AudioOutputTest, GameModelsTest, MusicDirectorTest, BgMusicTest, SamplesTest, BalloonsTest (logic) + ScreensTest (Robolectric renders -> screens/, git-ignored)
 ./gradlew assembleDebug    # the shipped APK -> app/build/outputs/apk/debug/app-debug.apk
 ```
 Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=…` or `ANDROID_HOME`).
@@ -27,6 +27,8 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=�
 * Downloaded audio in `app/src/main/res/raw` (Kevin MacLeod music, CC BY 4.0; CC0 balloon pop) is rebuilt by tools/prepare_audio.py and
   must stay credited in SOUND_CREDITS.md **and** in the app (`CREDITS` in Menu.kt, Parent settings › Credits). Recorded one-shots
   (`Samples`) are 16-bit WAV loaded by name with a synthesized fallback.
+* Balloons: `BalloonModel` constants (6-12 on screen, hard cap 16, giant every 25-40 s, idle show at 20 s, quiet after 90 s) are
+  pinned in BalloonsTest; the classic "only what you make" behaviour (`Prefs.balloonStream` off) stays pinned in GameModelsTest.
 * Audio: one output thread at a time (generation counter in `Audio`); the `Mixer` fades a stolen voice over 5 ms instead of cutting it.
 * **Never run the Android emulator.** It crashes the build box. Verify UI with the Robolectric renders.
 * **Signing:** must stay `~/.android/debug.keystore`, cert SHA-256 `65f0d4cb5041d1d60f2fbbb44d0bc73174de9ea1668be0038129630a6a4d113f`.

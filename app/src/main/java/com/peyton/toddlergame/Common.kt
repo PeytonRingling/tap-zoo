@@ -54,6 +54,8 @@ object Prefs {
   var musicVolume: Int get() = sp?.getInt("mvol", volume) ?: volume; set(v) { sp?.edit()?.putInt("mvol", v)?.apply() }
   var bedtimeMinutes: Int get() = sp?.getInt("bedmin", 15) ?: 15; set(v) { sp?.edit()?.putInt("bedmin", v)?.apply() }
   var kidLock: Boolean get() = sp?.getBoolean("klock", true) ?: true; set(v) { sp?.edit()?.putBoolean("klock", v)?.apply() }
+  /** Balloons: a gentle stream keeps 6-12 on screen (default) vs classic "only what you make, they stay until popped". */
+  var balloonStream: Boolean get() = sp?.getBoolean("bstream", true) ?: true; set(v) { sp?.edit()?.putBoolean("bstream", v)?.apply() }
   var balloonSymbols: Boolean get() = sp?.getBoolean("bsym", true) ?: true; set(v) { sp?.edit()?.putBoolean("bsym", v)?.apply() }
   fun volumeGain(v: Int) = v / 5f
 }
