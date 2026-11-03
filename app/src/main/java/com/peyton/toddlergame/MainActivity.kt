@@ -31,7 +31,8 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
     Prefs.init(this); AnimalSounds.init(this)
-    Thread { runCatching { Sfx.prewarm() } }.apply { name = "sfx-prewarm"; isDaemon = true; priority = Thread.MIN_PRIORITY }.start()
+    val app = applicationContext
+    Thread { runCatching { Samples.load(app) }; runCatching { Sfx.prewarm() } }.apply { name = "sfx-prewarm"; isDaemon = true; priority = Thread.MIN_PRIORITY }.start()
     Audio.volume = Prefs.volumeGain(Prefs.volume); BgMusic.musicGain = Prefs.volumeGain(Prefs.musicVolume); Fx.haptics = Prefs.haptics
     @Suppress("DEPRECATION") run { Fx.vib = getSystemService(Vibrator::class.java) }
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

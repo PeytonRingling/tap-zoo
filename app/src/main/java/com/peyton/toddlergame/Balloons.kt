@@ -63,7 +63,8 @@ internal class Flash(val x: Float, val y: Float, val r: Float, val t0: Float, va
 
 /** Classic tap-to-make / tap-to-pop play: touching empty sky blows up a balloon right under the finger;
  *  balloons drift gently and stay until popped; soap bubbles sometimes tag along. Nothing to win or lose. */
-internal class BalloonModel(private val sink: SoundSink = GameSound, private val rnd: Random = Random.Default) {
+internal class BalloonModel(private val sink: SoundSink = GameSound, private val rnd: Random = Random.Default,
+                            private val popSound: (Float) -> FloatArray = Samples::balloonPop) {
   val balloons = ArrayList<Balloon>(); val bubbles = ArrayList<SoapBubble>(); val floaters = ArrayList<Floater>(); val photos = ArrayList<PhotoFloat>(); val flashes = ArrayList<Flash>()
   val parts = Particles(600).apply { gravity = 700f }
   var w = 1f; var h = 1f; var t = 0f; var lastTouch = 0f; var pops = 0; var lastSpawn = 0f; var emptySince = 0f; var started = false
@@ -111,7 +112,7 @@ internal class BalloonModel(private val sink: SoundSink = GameSound, private val
   }
   fun pop(b: Balloon) {
     balloons.remove(b); pops++
-    sink.play(Sfx.balloonPop, 0.85f); sink.play(Sfx.xylo[rnd.nextInt(3, 10)], 0.35f); sink.haptic(true)
+    sink.play(popSound(((b.r / min(w, h) - 0.09f) / 0.035f)), 0.85f); sink.play(Sfx.xylo[rnd.nextInt(3, 10)], 0.35f); sink.haptic(true)
     flashes += Flash(b.x, b.y, b.r, t, b.color)
     parts.burst(b.x, b.y, 12, listOf(b.color, b.color.darken(0.1f)), kind = 5, speed = b.r * 9f, size = b.r * 0.16f, up = 50f, decay = 1.6f)
     parts.burst(b.x, b.y, 30, Pal.vivid, kind = 4, speed = b.r * 11f, size = b.r * 0.1f, up = b.r * 3f, decay = 0.55f)

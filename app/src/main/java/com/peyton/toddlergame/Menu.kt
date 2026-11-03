@@ -235,11 +235,20 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
         Box(Modifier.background(Color(0xFF4D96FF), RoundedCornerShape(16.dp)).clickable { onClose() }.padding(horizontal = 22.dp, vertical = 14.dp)) { BasicText("Back to play", style = label.copy(color = Color.White)) }
         Box(Modifier.background(Color(0xFFFF5D5D), RoundedCornerShape(16.dp)).clickable { onExit() }.padding(horizontal = 22.dp, vertical = 14.dp)) { BasicText("Exit app", style = label.copy(color = Color.White)) }
       }
+      BasicText("Credits", style = label)
+      BasicText(CREDITS, style = TextStyle(fontSize = 13.sp, color = Color(0xFF666677)))
       BasicText("Hold the house 1.5 s to go back to the menu; hold the gear 3 s for this panel. Kid lock pins Tap Zoo to the screen: first time, Android asks to confirm. Turn on Settings › Security & privacy › More security & privacy › App pinning, and 'Ask for PIN before unpinning'. Exit app here unpins it. No ads, no data collected; the internet is used only when you tap Check for updates here.",
         style = TextStyle(fontSize = 13.sp, color = Color(0xFF666677)))
     }
   }
 }
+
+/** Shown in Parent settings › Credits. The music lines are incompetech's required attribution, verbatim (CC BY 4.0). */
+internal val CREDITS = listOf("Monkeys Spinning Monkeys", "Beachfront Celebration").joinToString("\n\n") {
+  "\"$it\" Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0 License\nhttp://creativecommons.org/licenses/by/4.0/\n" +
+    "Edited: trimmed/looped and re-encoded for Tap Zoo."
+} + "\n\nBalloon pop: \"Pop 01\" by LilMati and \"Balloon Pop\" by Breviceps (freesound.org, CC0)." +
+  "\nAnimal sounds made with elevenlabs.io. Other music and sounds are original to Tap Zoo."
 
 /** Six bars, 0 = muted (red). */
 @Composable

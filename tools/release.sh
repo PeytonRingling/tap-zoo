@@ -23,7 +23,7 @@ git submodule update --init sounds
 ./gradlew -q assembleDebug -Pvc="$VC" -Pvn="$VN"
 mkdir -p release && cp app/build/outputs/apk/debug/app-debug.apk "$OUT"
 
-badging=$("$BT/aapt" dump badging "$OUT" | head -1)
+badging=$("$BT/aapt" dump badging "$OUT" | sed -n 1p)  # not head: with pipefail, head's early exit SIGPIPEs aapt
 echo "$badging"
 [[ "$badging" == *"name='$PKG' versionCode='$VC' versionName='$VN'"* ]] || { echo "FAIL: package/version mismatch" >&2; exit 1; }
 certs=$("$BT/apksigner" verify --print-certs "$OUT" | grep -o 'SHA-256 digest: [0-9a-f]*' | awk '{print $3}' | sort -u)
@@ -32,6 +32,13 @@ echo "signer: $certs"
 sounds=$(unzip -l "$OUT" | grep -c 'res/raw/animal_' || true)
 echo "animal sounds: $sounds"
 [[ "$sounds" == 8 ]] || { echo "FAIL: expected 8 res/raw/animal_* sounds (is the sounds submodule checked out?)" >&2; exit 1; }
+
+# Music + balloon pop are in the public repo (res/raw); make sure they made it into the APK.
+listing=$(unzip -l "$OUT")
+for f in music_balloons.ogg music_bubbles.ogg music_menu.ogg music_lullaby.ogg pop_balloon.wav; do
+  grep -q "res/raw/$f\$" <<<"$listing" || { echo "FAIL: res/raw/$f missing from the APK" >&2; exit 1; }
+done
+echo "music + pop: packaged"
 
 latest=$(gh release view --repo "$REPO" --json assets -q '.assets[].name' 2>/dev/null | sed -n 's/.*-vc\([0-9]*\)\.apk$/\1/p' | sort -n | tail -1 || true)
 if [[ -n "$latest" && "$VC" -le "$latest" ]]; then echo "FAIL: versionCode $VC is not above the latest release ($latest)" >&2; exit 1; fi
