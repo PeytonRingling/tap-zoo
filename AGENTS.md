@@ -23,10 +23,15 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=�
 * **Never run the Android emulator.** It crashes the build box. Verify UI with the Robolectric renders.
 * **Signing:** must stay `~/.android/debug.keystore`, cert SHA-256 `65f0d4cb5041d1d60f2fbbb44d0bc73174de9ea1668be0038129630a6a4d113f`.
   On a new machine, restore that keystore before the first build (see RELEASING.md). Never create or commit a key.
-* versionCode is still 1 (true for all shipped builds so far). Bump it deliberately on the next release, and only upward.
-* Kid-safe: no ads, no network, no links out, nothing that leaves the app without the parent lock.
+* Versions: v1–v8 were all versionCode 1; v9 = versionCode 2 / versionName "9" (gradle defaults). Bump with `-Pvc/-Pvn`, only upward.
+* Kid-safe: no ads, no links out, nothing that leaves the app without the parent lock. The only network use is Parent settings ›
+  App updates (GitHub Releases), started by a parent tap. Never add automatic checks or any update UI outside that panel.
 * Never commit APKs, keystores or `local.properties`.
 * The repo is public: never commit personal data (family names/photos, the child's age, location, device serials, Drive links).
 
 ## Delivery
-Upload the APK to Peyton's Google Drive, and he installs it from there. Uploading or sending anything needs his approval.
+* Preferred: GitHub Releases via `tools/release.sh <vc> <vn> [--publish]`: tag `v<vn>`, asset `tap-zoo-v<vn>-vc<vc>.apk` (the app
+  parses this name). The phone installs it from Parent settings › App updates. See RELEASING.md.
+* Fallback: upload the APK to Peyton's Google Drive. Publishing, uploading or sending anything needs his approval.
+* Updater code: `GitHubReleases.kt` (same file as the TV Launcher's), `Updater.kt`, `UpdatesRow` in Menu.kt.
+  Tests: `GitHubReleasesTest`, `UpdaterTest`, `ScreensTest.upd*`.

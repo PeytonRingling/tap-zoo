@@ -2,7 +2,10 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
 android {
   namespace = "com.peyton.toddlergame"
   compileSdk = 34
-  defaultConfig { applicationId = "com.peyton.toddlergame"; minSdk = 26; targetSdk = 34; versionCode = 1; versionName = "1.0" }
+  // Release label = versionName ("9" = Tap Zoo v9). Bump with -Pvc/-Pvn (tools/release.sh) and update these defaults in the
+  // same commit. versionCode history: 1 = every build up to v8, 2 = v9 (first build with the GitHub updater).
+  defaultConfig { applicationId = "com.peyton.toddlergame"; minSdk = 26; targetSdk = 34
+    versionCode = (findProperty("vc") as String?)?.toInt() ?: 2; versionName = (findProperty("vn") as String?) ?: "9" }
   buildFeatures { compose = true }
   composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
   compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
@@ -23,6 +26,7 @@ dependencies {
   implementation("androidx.compose.foundation:foundation")
   implementation("androidx.activity:activity-compose:1.9.0")
   implementation("androidx.core:core-ktx:1.13.1")
+  implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2")
   testImplementation("junit:junit:4.13.2")
   testImplementation("org.robolectric:robolectric:4.13")
   testImplementation("io.github.takahirom.roborazzi:roborazzi:1.26.0")
