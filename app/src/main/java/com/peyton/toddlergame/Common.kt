@@ -32,7 +32,7 @@ val RAINBOW = listOf(0xFFFF6B6B, 0xFFFF9F43, 0xFFFFD43B, 0xFF94D82D, 0xFF38D9A9,
 
 /** Every screen a child can be in. [tile] = shown on the menu; Bedtime is started by a parent from Parent settings instead. */
 enum class Mode(val tile: Boolean = true) {
-  BALLOONS, ANIMALS, AQUARIUM, BUBBLES, VEHICLES, DRUMS, PEEKABOO, PAINT, FIREWORKS, FEED, WASH, STICKERS, BEDTIME(tile = false);
+  BALLOONS, ANIMALS, AQUARIUM, BUBBLES, VEHICLES, DRUMS, PEEKABOO, PAINT, FIREWORKS, FEED, WASH, BEDTIME(tile = false);
   companion object { val TILES = entries.filter { it.tile } }
 }
 

@@ -90,10 +90,11 @@ class ScreensTest {
   @Test fun wash() { shot("35_wash_unfolded", "WASH", drag = true, after = 300)
     org.junit.Assert.assertTrue("Wash has music, not silent", BgMusic.currentName in setOf("music_bubbles", "music_balloons")) }
   @Config(qualifiers = FOLDED) @Test fun washFolded() = shot("36_wash_folded", "WASH", drag = true, after = 300)
-  /** Stickers: a few taps in, so the page has stickers and the next one glows in the tray. */
-  @Test fun stickers() { shot("37_stickers_unfolded", "STICKERS", listOf(0.2f to 0.25f, 0.5f to 0.2f, 0.8f to 0.3f, 0.35f to 0.55f, 0.65f to 0.5f, 0.5f to 0.4f), after = 600)
-    org.junit.Assert.assertEquals("no music in Stickers", "", BgMusic.currentName) }
-  @Config(qualifiers = FOLDED) @Test fun stickersFolded() = shot("38_stickers_folded", "STICKERS", listOf(0.3f to 0.2f, 0.7f to 0.3f, 0.4f to 0.5f, 0.7f to 0.65f), after = 600)
+  /** Fireworks v13: four quick taps on one spot build a big burst, and the 6th rocket is a smiley face. Fireflies drift. */
+  private val buildTaps = listOf(0.2f to 0.3f, 0.8f to 0.25f, 0.5f to 0.4f, 0.5f to 0.4f, 0.5f to 0.4f, 0.78f to 0.62f)
+  @Test fun fireworksBuild() = shot("41_fireworks_build_face", "FIREWORKS", buildTaps, after = 560, settle = 4000)
+  @Test fun fireworksFireflies() = shot("43_fireworks_fireflies", "FIREWORKS", settle = 5000)
+  @Config(qualifiers = FOLDED) @Test fun fireworksBuildFolded() = shot("42_fireworks_build_face_folded", "FIREWORKS", buildTaps.map { (x, y) -> x to y * 0.9f }, after = 560, settle = 4000)
   @Config(qualifiers = FOLDED) @Test fun fireworksFolded() = shot("32_fireworks_folded", "FIREWORKS", fireTaps, after = 520)
   /** A start name from an older version (a removed mode) opens the menu instead of crashing. */
   @Test fun removedModeNameOpensTheMenu() {

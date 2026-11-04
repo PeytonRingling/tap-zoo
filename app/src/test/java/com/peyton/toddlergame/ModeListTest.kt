@@ -16,17 +16,17 @@ class ModeListTest {
   private val c = ApplicationProvider.getApplicationContext<Context>()
 
   @Test fun tilesAndBedtimeIsNotOne() {
-    assertEquals(listOf(Mode.BALLOONS, Mode.ANIMALS, Mode.AQUARIUM, Mode.BUBBLES, Mode.VEHICLES, Mode.DRUMS, Mode.PEEKABOO, Mode.PAINT, Mode.FIREWORKS, Mode.FEED, Mode.WASH, Mode.STICKERS), Mode.TILES)
+    assertEquals(listOf(Mode.BALLOONS, Mode.ANIMALS, Mode.AQUARIUM, Mode.BUBBLES, Mode.VEHICLES, Mode.DRUMS, Mode.PEEKABOO, Mode.PAINT, Mode.FIREWORKS, Mode.FEED, Mode.WASH), Mode.TILES)
     assertFalse(Mode.BEDTIME in Mode.TILES)
     assertEquals(Mode.TILES + Mode.BEDTIME, Mode.entries)
   }
 
   @Test fun savedTilesKeepTheOnesThatStillExist() {
-    assertEquals(setOf(Mode.BUBBLES, Mode.PAINT), enabledFrom(setOf("BUBBLES", "GARDEN", "PAINT", "SKY", "MUSIC")))
+    assertEquals(setOf(Mode.BUBBLES, Mode.PAINT), enabledFrom(setOf("BUBBLES", "GARDEN", "PAINT", "SKY", "MUSIC", "STICKERS")))
   }
 
   @Test fun savedSetWithOnlyRemovedOrHiddenModesShowsEveryTile() {
-    assertEquals(Mode.TILES.toSet(), enabledFrom(setOf("GARDEN", "MUSIC", "SKY")))
+    assertEquals(Mode.TILES.toSet(), enabledFrom(setOf("GARDEN", "MUSIC", "SKY", "STICKERS")))
     assertEquals("bedtime alone can't empty the menu", Mode.TILES.toSet(), enabledFrom(setOf("BEDTIME")))
     assertEquals(Mode.TILES.toSet(), enabledFrom(emptySet()))
     assertEquals(Mode.TILES.toSet(), enabledFrom(null))
@@ -35,7 +35,7 @@ class ModeListTest {
 
   @Test fun prefsFromAnOlderVersionLoadWithoutCrashing() {
     val sp = c.getSharedPreferences("toddler", Context.MODE_PRIVATE)
-    sp.edit().clear().putStringSet("modes", setOf("BALLOONS", "GARDEN", "MUSIC", "SKY", "BEDTIME")).putBoolean("bsym", false).commit()
+    sp.edit().clear().putStringSet("modes", setOf("BALLOONS", "GARDEN", "MUSIC", "SKY", "BEDTIME", "STICKERS")).putBoolean("bsym", false).commit()
     Prefs.init(c)
     assertEquals(setOf(Mode.BALLOONS), Prefs.enabled)
     Prefs.enabled = setOf(Mode.BALLOONS, Mode.PAINT)

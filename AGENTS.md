@@ -37,14 +37,13 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=�
   removed in round 2) and never returns an empty menu (ModeListTest).
 * Fireworks (`FireworksModel`, FireworksTest): any touch launches a rocket under the finger that bursts where it is; holding fires
   every 0.3 s. Caps: 6 rockets (the oldest bursts early), 900 sparks (the oldest drop), whoosh/boom throttled. No music.
+  Each shape has its own sound (ring = `bigBoom`, heart = `twinkle`, star = loud crackle); quick taps on one spot build up to 3
+  extra spark layers; every 6th rocket is a smiley or cat face; 12 silent fireflies drift and glow brighter between taps.
 * Feed the monster (`FeedModel`, FeedTest): tap a food, or anywhere (feeds the nearest), and it flies into the mouth; drag and let
   go anywhere hops it in. Burp every 5th bite. Foods always respawn. No music.
 * Wash the animal (`WashModel`, WashTest): rub or tap the mud (3 rubs a splat, twice as hard after 10 s); every touch foams and
   squeaks. At 20% mud left: shower, animal sound, next friend walks in. Music: the `WASH` slot (Beachfront Celebration).
-* Stickers (`StickersModel`, StickersTest): tapping the scene slaps the glowing tray sticker there and the next one glows; drag a
-  tray sticker to peel and place it; tap a placed one for its sound. Max 20 (oldest shrinks away); two fingers held still 2 s clear
-  the page (palms of 3+ fingers don't). No music.
-* Menu layout (`MenuModel.rects`, MenuLayoutTest): 12 tiles must fit phone, phone landscape and both Fold screens, ≥ 90 dp each and
+* Menu layout (`MenuModel.rects`, MenuLayoutTest): 11 tiles must fit phone, phone landscape and both Fold screens, ≥ 90 dp each and
   clear of the parent gear corner.
 * Audio: one output thread at a time (generation counter in `Audio`); the `Mixer` fades a stolen voice over 5 ms instead of cutting it.
 * **Never run the Android emulator.** It crashes the build box. Verify UI with the Robolectric renders.
