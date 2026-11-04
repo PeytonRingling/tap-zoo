@@ -34,7 +34,8 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=�
   constants are pinned in BalloonsTest; the classic "only what you make" behaviour (`Prefs.balloonStream` off) stays pinned in GameModelsTest.
 * Modes: `Mode` in Common.kt; `Mode.TILES` are the menu tiles. Bedtime has `tile = false` and is started from Parent settings ›
   Start bedtime. Saved tile sets go through `enabledFrom`, which drops names from older versions (Garden, Music pads, Night sky were
-  removed in round 2) and never returns an empty menu (ModeListTest).
+  removed in round 2; Stickers in v13) and never returns an empty menu (ModeListTest). `modeknown` records which tiles existed
+  when the set was saved (missing = v12 tiles), so a tile added later (Splash pond) starts on.
 * Fireworks (`FireworksModel`, FireworksTest): any touch launches a rocket under the finger that bursts where it is; holding fires
   every 0.3 s. Caps: 6 rockets (the oldest bursts early), 900 sparks (the oldest drop), whoosh/boom throttled. No music.
   Each shape has its own sound (ring = `bigBoom`, heart = `twinkle`, star = loud crackle); quick taps on one spot build up to 3
@@ -47,7 +48,12 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=�
   squeaks. At 20% mud left: RINSE (shower) → SHAKE (splash) → DRY (blow-dryer, rubbing speeds it, finishes alone in 1.6 s) →
   FLUFFY (voice + sparkles) → next friend. Animals: `WashAnimal` (pig, dog, elephant, sheep + 4 critters; elephant/sheep drawn and
   voiced in Wash.kt). Belly rub giggles (0.8 s gap); up to 6 soap bubbles float up and pop on tap. Music: the `WASH` slot.
-* Menu layout (`MenuModel.rects`, MenuLayoutTest): 11 tiles must fit phone, phone landscape and both Fold screens, ≥ 90 dp each and
+* Splash pond (`PondModel`, PondTest): every water tap = ripple + droplets + a plop (`Sfx.plops`, 0.05 s sound gap); every 2nd
+  splash pops up a friend (duck on the water, then a frog on the nearest free lily pad, max 4, 9 s each); tapping a friend
+  quacks/ribbits (0.35 s gap); tapping a pad bobs it and seats a frog. Drags leave wake ripples every 6% of the short side
+  (`Sfx.swish`, 0.18 s gap). Every 5th splash a fish jumps; every 12th (or after 9 s idle) a surprise: big frog leap / duck
+  family. Caps: 48 ripples, 2 fish, 300 particles. Music: the `POND` slot (Monkeys Spinning Monkeys, quiet), on after update.
+* Menu layout (`MenuModel.rects`, MenuLayoutTest): 12 tiles must fit phone, phone landscape and both Fold screens, ≥ 90 dp each and
   clear of the parent gear corner.
 * Audio: one output thread at a time (generation counter in `Audio`); the `Mixer` fades a stolen voice over 5 ms instead of cutting it.
 * **Never run the Android emulator.** It crashes the build box. Verify UI with the Robolectric renders.

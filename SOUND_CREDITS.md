@@ -10,7 +10,7 @@ License note: ElevenLabs output from a free plan is non-commercial only and must
 commercial use. ElevenLabs' Sound Effects terms also say generated sound effects may be distributed as part of an app/production, not
 as standalone audio files or a sound library. That's why they're kept in a private repo and only ship inside the APK; do not reuse them separately.
 ## Music
-### music_balloons.ogg (Balloons) and music_bubbles.ogg (Bubbles): Kevin MacLeod, CC BY 4.0
+### music_balloons.ogg (Balloons, Splash pond) and music_bubbles.ogg (Bubbles, Wash): Kevin MacLeod, CC BY 4.0
 In this public repo (CC BY 4.0 allows redistribution with credit). The same credit appears in the app: Parent settings › Credits.
 ```
 "Monkeys Spinning Monkeys" Kevin MacLeod (incompetech.com)

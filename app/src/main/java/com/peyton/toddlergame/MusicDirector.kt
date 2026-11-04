@@ -4,7 +4,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** Where background music can be switched on/off by a parent. Bedtime's lullaby isn't here: it's part of that mode. */
-enum class MusicSlot(val label: String) { MENU("Menu"), BALLOONS("Balloons"), BUBBLES("Bubbles"), WASH("Wash") }
+enum class MusicSlot(val label: String) { MENU("Menu"), BALLOONS("Balloons"), BUBBLES("Bubbles"), WASH("Wash"), POND("Pond") }
 
 /** A background track: resource names in preference order (first one packaged wins), loudness, and how far it ducks under SFX. */
 internal data class Track(val names: List<String>, val level: Float, val duckDepth: Float)
@@ -22,6 +22,8 @@ internal object MusicDirector {
     MusicSlot.BUBBLES to Track(listOf("music_bubbles", "music_balloons"), 0.42f, 0.8f),
     // Wash reuses Bubbles' Beachfront Celebration (falls back to the Balloons track), a little quieter under the scrubbing.
     MusicSlot.WASH to Track(listOf("music_bubbles", "music_balloons"), 0.38f, 0.75f),
+    // Splash pond: the gentle Monkeys Spinning Monkeys, quiet, so the plops and quacks stay on top.
+    MusicSlot.POND to Track(listOf("music_balloons", "music_bubbles"), 0.32f, 0.7f),
   )
   val LULLABY = Track(listOf("music_lullaby"), 0.55f, 0.35f)
   private val V10_SLOTS = setOf("MENU", "BALLOONS", "BUBBLES")
@@ -31,6 +33,7 @@ internal object MusicDirector {
     Mode.BALLOONS -> MusicSlot.BALLOONS
     Mode.BUBBLES -> MusicSlot.BUBBLES
     Mode.WASH -> MusicSlot.WASH
+    Mode.POND -> MusicSlot.POND
     else -> null
   }
 

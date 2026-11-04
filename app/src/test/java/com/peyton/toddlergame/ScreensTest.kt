@@ -84,6 +84,27 @@ class ScreensTest {
   @Test fun washDogDry() = washShot("50_wash_dog_blowdry", WashAnimal.DOG, scrubAll to 2700L)
   @Test fun washSheepFluffy() = washShot("51_wash_sheep_fluffy", WashAnimal.SHEEP, scrubAll to 3900L)
   @Config(qualifiers = FOLDED) @Test fun washSheepFluffyFolded() = washShot("52_wash_sheep_fluffy_folded", WashAnimal.SHEEP, scrubAll to 3900L)
+  private fun pondShot(name: String, vararg steps: Pair<(PondModel) -> Unit, Long>) {
+    rule.mainClock.autoAdvance = false
+    val m = PondModel(FakeSink(), kotlin.random.Random(5))
+    rule.setContent { Box(Modifier.fillMaxSize()) { PondScreenFor(m) } }
+    rule.mainClock.advanceTimeBy(1000)
+    for ((setup, ms) in steps) { rule.runOnIdle { setup(m) }; rule.mainClock.advanceTimeBy(ms) }
+    rule.onRoot().captureRoboImage("$out/$name.png")
+  }
+  /** Four splashes (a duck and a frog pop up), a lily pad tap, and a finger dragged across leaving a wake. */
+  private val pondPlay: (PondModel) -> Unit = { m ->
+    listOf(0.4f to 0.45f, 0.6f to 0.55f, 0.5f to 0.35f, 0.45f to 0.62f).forEachIndexed { i, (x, y) -> m.down(300L + i, Offset(m.w * x, m.h * y)); m.up(300L + i) }
+    m.down(310, m.padAt(1)); m.up(310)
+    m.down(320, Offset(m.w * 0.12f, m.h * 0.5f)); for (i in 1..14) m.move(320, Offset(m.w * (0.12f + i * 0.045f), m.h * (0.5f + 0.12f * kotlin.math.sin(i * 0.5f)))); m.up(320) }
+  private val pondFrogLeap: (PondModel) -> Unit = { m -> m.startSurprise(Surprise.FROG_JUMP) }
+  private val pondDucks: (PondModel) -> Unit = { m -> m.startSurprise(Surprise.DUCK_FAMILY) }
+  private val pondFish: (PondModel) -> Unit = { m -> var i = 0; while (m.fish.isEmpty() && i < 12) { m.down(400L + i, Offset(m.w * (0.3f + (i % 4) * 0.12f), m.h * (0.4f + (i % 3) * 0.12f))); m.up(400L + i); i++ } }
+  @Test fun pondPlayShot() = pondShot("53_pond_splash_friends_wake", pondPlay to 350L)
+  @Test fun pondFrogLeapShot() = pondShot("54_pond_frog_leap", pondFrogLeap to 800L)
+  @Test fun pondDuckFamilyShot() = pondShot("55_pond_duck_family", pondDucks to 3500L)
+  @Test fun pondFishShot() = pondShot("56_pond_fish_jump", pondFish to 420L)
+  @Config(qualifiers = FOLDED) @Test fun pondPlayFolded() = pondShot("57_pond_splash_friends_folded", pondPlay to 350L)
   private val popSome: (BalloonModel) -> Unit = { m -> m.balloons.filter { it.live && it.y < m.h }.take(3).forEach { m.pop(it) } }
   private val animal: (BalloonModel) -> Unit = { m -> m.make(m.w * 0.7f, m.h * 0.5f, kind = BKind.ANIMAL) }
   private val parachute: (BalloonModel) -> Unit = { m -> m.pop(m.make(m.w * 0.3f, m.h * 0.25f, kind = BKind.ANIMAL)) }

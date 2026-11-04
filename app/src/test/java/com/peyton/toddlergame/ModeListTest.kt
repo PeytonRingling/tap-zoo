@@ -16,13 +16,17 @@ class ModeListTest {
   private val c = ApplicationProvider.getApplicationContext<Context>()
 
   @Test fun tilesAndBedtimeIsNotOne() {
-    assertEquals(listOf(Mode.BALLOONS, Mode.ANIMALS, Mode.AQUARIUM, Mode.BUBBLES, Mode.VEHICLES, Mode.DRUMS, Mode.PEEKABOO, Mode.PAINT, Mode.FIREWORKS, Mode.FEED, Mode.WASH), Mode.TILES)
+    assertEquals(listOf(Mode.BALLOONS, Mode.ANIMALS, Mode.AQUARIUM, Mode.BUBBLES, Mode.VEHICLES, Mode.DRUMS, Mode.PEEKABOO, Mode.PAINT, Mode.FIREWORKS, Mode.FEED, Mode.WASH, Mode.POND), Mode.TILES)
     assertFalse(Mode.BEDTIME in Mode.TILES)
     assertEquals(Mode.TILES + Mode.BEDTIME, Mode.entries)
   }
 
   @Test fun savedTilesKeepTheOnesThatStillExist() {
-    assertEquals(setOf(Mode.BUBBLES, Mode.PAINT), enabledFrom(setOf("BUBBLES", "GARDEN", "PAINT", "SKY", "MUSIC", "STICKERS")))
+    assertEquals("Pond is new since that set was saved, so it's on", setOf(Mode.BUBBLES, Mode.PAINT, Mode.POND),
+      enabledFrom(setOf("BUBBLES", "GARDEN", "PAINT", "SKY", "MUSIC", "STICKERS")))
+    val now = Mode.TILES.map { it.name }.toSet()
+    assertEquals("saved by v13: a parent who hid Pond keeps it hidden", setOf(Mode.BUBBLES, Mode.PAINT), enabledFrom(setOf("BUBBLES", "PAINT"), now))
+    assertEquals(setOf(Mode.POND), enabledFrom(setOf("POND", "STICKERS"), now))
   }
 
   @Test fun savedSetWithOnlyRemovedOrHiddenModesShowsEveryTile() {
@@ -37,9 +41,10 @@ class ModeListTest {
     val sp = c.getSharedPreferences("toddler", Context.MODE_PRIVATE)
     sp.edit().clear().putStringSet("modes", setOf("BALLOONS", "GARDEN", "MUSIC", "SKY", "BEDTIME", "STICKERS")).putBoolean("bsym", false).commit()
     Prefs.init(c)
-    assertEquals(setOf(Mode.BALLOONS), Prefs.enabled)
+    assertEquals("old tiles kept, Stickers dropped, new Pond tile on", setOf(Mode.BALLOONS, Mode.POND), Prefs.enabled)
     Prefs.enabled = setOf(Mode.BALLOONS, Mode.PAINT)
     assertEquals(setOf("BALLOONS", "PAINT"), sp.getStringSet("modes", null))
+    assertEquals("after saving, Pond stays hidden", setOf(Mode.BALLOONS, Mode.PAINT), Prefs.enabled)
     sp.edit().clear().commit()
   }
 }
