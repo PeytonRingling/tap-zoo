@@ -32,7 +32,7 @@ val RAINBOW = listOf(0xFFFF6B6B, 0xFFFF9F43, 0xFFFFD43B, 0xFF94D82D, 0xFF38D9A9,
 
 /** Every screen a child can be in. [tile] = shown on the menu; Bedtime is started by a parent from Parent settings instead. */
 enum class Mode(val tile: Boolean = true) {
-  BALLOONS, ANIMALS, AQUARIUM, BUBBLES, VEHICLES, DRUMS, PEEKABOO, PAINT, FIREWORKS, FEED, BEDTIME(tile = false);
+  BALLOONS, ANIMALS, AQUARIUM, BUBBLES, VEHICLES, DRUMS, PEEKABOO, PAINT, FIREWORKS, FEED, WASH, BEDTIME(tile = false);
   companion object { val TILES = entries.filter { it.tile } }
 }
 
@@ -54,8 +54,9 @@ object Prefs {
   var musicSlots: Set<MusicSlot>
     get() { val p = sp ?: return MusicSlot.entries.toSet()
       return MusicDirector.migrate(p.getStringSet("musslots", null),
-        if (p.contains("mmus")) p.getBoolean("mmus", true) else null, if (p.contains("bmus")) p.getBoolean("bmus", true) else null) }
-    set(v) { sp?.edit()?.putStringSet("musslots", v.map { it.name }.toSet())?.apply() }
+        if (p.contains("mmus")) p.getBoolean("mmus", true) else null, if (p.contains("bmus")) p.getBoolean("bmus", true) else null,
+        p.getStringSet("musknown", null)) }
+    set(v) { sp?.edit()?.putStringSet("musslots", v.map { it.name }.toSet())?.putStringSet("musknown", MusicSlot.entries.map { it.name }.toSet())?.apply() }
   /** Music volume 0..5. Until a parent sets it, it follows the old single volume so loudness doesn't change on update. */
   var musicVolume: Int get() = sp?.getInt("mvol", volume) ?: volume; set(v) { sp?.edit()?.putInt("mvol", v)?.apply() }
   var bedtimeMinutes: Int get() = sp?.getInt("bedmin", 15) ?: 15; set(v) { sp?.edit()?.putInt("bedmin", v)?.apply() }

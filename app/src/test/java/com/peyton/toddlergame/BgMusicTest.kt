@@ -47,6 +47,8 @@ class BgMusicTest {
     assertEquals(2, Prefs.musicVolume)
     Prefs.volume = 5; assertEquals("changing SFX volume must not move music", 2, Prefs.musicVolume)
     Prefs.musicSlots = setOf(MusicSlot.BUBBLES); assertEquals(setOf(MusicSlot.BUBBLES), Prefs.musicSlots)
+    sp.edit().clear().putStringSet("musslots", setOf("BUBBLES")).commit()   // saved by v11, before Wash existed
+    assertEquals("a new mode's music starts on after the update", setOf(MusicSlot.BUBBLES, MusicSlot.WASH), Prefs.musicSlots)
     sp.edit().clear().commit()
   }
 }

@@ -86,6 +86,10 @@ class ScreensTest {
   /** Feed: a food mid-flight toward the open mouth. */
   @Test fun feed() = shot("33_feed_unfolded", "FEED", listOf(0.5f to 0.3f), after = 220)
   @Config(qualifiers = FOLDED) @Test fun feedFolded() = shot("34_feed_folded", "FEED", listOf(0.5f to 0.18f), after = 220)
+  /** Wash: a few rubs in, foam on the fur and mud coming off. */
+  @Test fun wash() { shot("35_wash_unfolded", "WASH", drag = true, after = 300)
+    org.junit.Assert.assertTrue("Wash has music, not silent", BgMusic.currentName in setOf("music_bubbles", "music_balloons")) }
+  @Config(qualifiers = FOLDED) @Test fun washFolded() = shot("36_wash_folded", "WASH", drag = true, after = 300)
   @Config(qualifiers = FOLDED) @Test fun fireworksFolded() = shot("32_fireworks_folded", "FIREWORKS", fireTaps, after = 520)
   /** A start name from an older version (a removed mode) opens the menu instead of crashing. */
   @Test fun removedModeNameOpensTheMenu() {

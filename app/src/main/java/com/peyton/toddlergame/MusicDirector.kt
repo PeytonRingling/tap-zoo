@@ -4,7 +4,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** Where background music can be switched on/off by a parent. Bedtime's lullaby isn't here: it's part of that mode. */
-enum class MusicSlot(val label: String) { MENU("Menu"), BALLOONS("Balloons"), BUBBLES("Bubbles") }
+enum class MusicSlot(val label: String) { MENU("Menu"), BALLOONS("Balloons"), BUBBLES("Bubbles"), WASH("Wash") }
 
 /** A background track: resource names in preference order (first one packaged wins), loudness, and how far it ducks under SFX. */
 internal data class Track(val names: List<String>, val level: Float, val duckDepth: Float)
@@ -20,13 +20,17 @@ internal object MusicDirector {
     // Busy play modes duck only lightly (to 80%) so the music keeps going under a storm of pops.
     MusicSlot.BALLOONS to Track(listOf("music_balloons"), 0.45f, 0.8f),
     MusicSlot.BUBBLES to Track(listOf("music_bubbles", "music_balloons"), 0.42f, 0.8f),
+    // Wash reuses Bubbles' Beachfront Celebration (falls back to the Balloons track), a little quieter under the scrubbing.
+    MusicSlot.WASH to Track(listOf("music_bubbles", "music_balloons"), 0.38f, 0.75f),
   )
   val LULLABY = Track(listOf("music_lullaby"), 0.55f, 0.35f)
+  private val V10_SLOTS = setOf("MENU", "BALLOONS", "BUBBLES")
 
   fun slotFor(screen: Mode?): MusicSlot? = when (screen) {
     null -> MusicSlot.MENU
     Mode.BALLOONS -> MusicSlot.BALLOONS
     Mode.BUBBLES -> MusicSlot.BUBBLES
+    Mode.WASH -> MusicSlot.WASH
     else -> null
   }
 
@@ -38,10 +42,14 @@ internal object MusicDirector {
     return MusicPick(name, t.level, t.duckDepth)
   }
 
-  /** Per-slot switches. Before this version there were two switches: `mmus` (menu) and `bmus` (balloons); a parent who had
-   *  turned one off keeps it off. Bubbles is new and starts on. Unknown names in [stored] are ignored. */
-  fun migrate(stored: Set<String>?, oldMenu: Boolean?, oldBalloons: Boolean?): Set<MusicSlot> {
-    if (stored != null) return stored.mapNotNull { n -> MusicSlot.entries.firstOrNull { it.name == n } }.toSet()
+  /** Per-slot switches. Before v10 there were two switches: `mmus` (menu) and `bmus` (balloons); a parent who had turned one off
+   *  keeps it off. [known] = the slots that existed when [stored] was saved (null = saved by v10/v11, which had Menu, Balloons and
+   *  Bubbles): a slot added since then starts on, so a new mode's music isn't silently off after an update. Unknown names are ignored. */
+  fun migrate(stored: Set<String>?, oldMenu: Boolean?, oldBalloons: Boolean?, known: Set<String>? = null): Set<MusicSlot> {
+    if (stored != null) {
+      val seen = known ?: V10_SLOTS
+      return (stored.mapNotNull { n -> MusicSlot.entries.firstOrNull { it.name == n } } + MusicSlot.entries.filter { it.name !in seen }).toSet()
+    }
     val s = MusicSlot.entries.toMutableSet()
     if (oldMenu == false) s -= MusicSlot.MENU
     if (oldBalloons == false) s -= MusicSlot.BALLOONS

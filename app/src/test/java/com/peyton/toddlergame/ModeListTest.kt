@@ -16,7 +16,7 @@ class ModeListTest {
   private val c = ApplicationProvider.getApplicationContext<Context>()
 
   @Test fun tilesAndBedtimeIsNotOne() {
-    assertEquals(listOf(Mode.BALLOONS, Mode.ANIMALS, Mode.AQUARIUM, Mode.BUBBLES, Mode.VEHICLES, Mode.DRUMS, Mode.PEEKABOO, Mode.PAINT, Mode.FIREWORKS, Mode.FEED), Mode.TILES)
+    assertEquals(listOf(Mode.BALLOONS, Mode.ANIMALS, Mode.AQUARIUM, Mode.BUBBLES, Mode.VEHICLES, Mode.DRUMS, Mode.PEEKABOO, Mode.PAINT, Mode.FIREWORKS, Mode.FEED, Mode.WASH), Mode.TILES)
     assertFalse(Mode.BEDTIME in Mode.TILES)
     assertEquals(Mode.TILES + Mode.BEDTIME, Mode.entries)
   }
