@@ -89,6 +89,11 @@ object Sfx {
     }
     out
   }
+  /** Monster chomp: two quick crunchy bites. */
+  val chomp by lazy { seq(mix(tone(180.0, 90.0, 0.09, noise = 0.55, decay = 5.0), tone(1800.0, 900.0, 0.05, noise = 0.8, decay = 6.0, gain = 0.4)), silence(0.05),
+    mix(tone(200.0, 100.0, 0.08, noise = 0.55, decay = 5.0), tone(2000.0, 1000.0, 0.045, noise = 0.8, decay = 6.0, gain = 0.35))) }
+  /** Friendly cartoon burp: a low wobbly croak. */
+  val burp by lazy { tone(120.0, 85.0, 0.45, vib = 18.0, vibRate = 22.0, harm = 0.8, decay = 2.0, noise = 0.15, gain = 0.7) }
   /** Soft rubbery squeak: an idle balloon wiggling for attention. */
   val squeak by lazy { tone(700.0, 1150.0, 0.16, vib = 60.0, vibRate = 28.0, harm = 0.4, decay = 2.0, gain = 0.5) }
 
@@ -96,7 +101,7 @@ object Sfx {
    *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
   fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
     listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, zoom, kick, tom, snare, cymbal, march, whoosh) +
-    comboNotes + listOf(squeak, crackle)
+    comboNotes + listOf(squeak, crackle, chomp, burp)
 }
 
 /** Pure software mixer (no Android types, unit-tested). Voices are capped so chaos stays pleasant; when a new sound would

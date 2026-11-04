@@ -43,7 +43,7 @@ val MODE_BG = mapOf(Mode.BALLOONS to (Color(0xFFBDE3FF) to Color(0xFFFFE3EF)), M
   Mode.AQUARIUM to (Color(0xFF8FE3FF) to Color(0xFF4E8DF0)), Mode.BUBBLES to (Color(0xFFC8F3FF) to Color(0xFF7FD3F5)),
   Mode.VEHICLES to (Color(0xFFFFF0C9) to Color(0xFFFFD58A)),
   Mode.DRUMS to (Color(0xFFFFE1D2) to Color(0xFFFFB9A0)), Mode.PEEKABOO to (Color(0xFFFFF3CF) to Color(0xFFFFD9A8)),
-  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.FIREWORKS to (Color(0xFF1B2470) to Color(0xFF0A0E33)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
+  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.FIREWORKS to (Color(0xFF1B2470) to Color(0xFF0A0E33)), Mode.FEED to (Color(0xFFFFF1C9) to Color(0xFFFFC2DA)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
 
 /** Animated picture icon for each mode (no text). */
 fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f) {
@@ -82,6 +82,9 @@ fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f
         else { val e = (k - 0.3f) / 0.7f; val col = RAINBOW[((t * 0.7f).toInt()) % RAINBOW.size]
           for (j in 0 until 12) { val a = j * PI.toFloat() / 6; val rr = s * 0.32f * (1 - (1 - e) * (1 - e))
             drawCircle((if (j % 3 == 0) Color.White else col).copy(alpha = 1 - e * 0.45f), s * 0.038f, bc + Offset(cos(a) * rr, sin(a) * rr)) } } }
+      Mode.FEED -> { val k = (t * 0.8f) % 1f; val mc = Offset(c.x, c.y + s * 0.17f)
+        drawMonster(mc, s * 0.27f, if (k < 0.6f) k / 0.6f else 1f - (k - 0.6f) / 0.4f, Offset(0f, -0.6f), 0.2f * sin(t * 6f), 1f, t)
+        if (k < 0.6f) drawFood(FoodKind.APPLE, Offset(c.x + s * 0.25f * (1 - k / 0.6f), rc.top + s * 0.2f + (mc.y - rc.top - s * 0.2f) * (k / 0.6f) * 0.75f), s * 0.1f, k * 300f) }
       Mode.BEDTIME -> { for (i in 0 until 6) drawStar(Offset(rc.left + s * ((i * 41 % 100) / 100f), rc.top + s * ((i * 23 % 60) / 100f)), s * 0.018f, Color.White.copy(alpha = 0.4f + 0.3f * sin(t + i)))
         val mc = Offset(rc.left + s * 0.72f, rc.top + s * 0.27f); drawCircle(Color(0xFFFFF1B8), s * 0.13f, mc); drawCircle(MODE_BG.getValue(Mode.BEDTIME).first, s * 0.11f, mc + Offset(s * 0.06f, -s * 0.03f))
         drawCritter(Critter.CAT, Offset(c.x - s * 0.05f, c.y + s * 0.17f), s * 0.2f * (1 + 0.03f * sin(t * 1.5f)), Offset.Zero, 1f, 0f)

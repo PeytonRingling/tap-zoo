@@ -83,6 +83,9 @@ class ScreensTest {
     shot("31_fireworks_unfolded", "FIREWORKS", fireTaps, after = 520)
     org.junit.Assert.assertEquals("no music in Fireworks", "", BgMusic.currentName)
   }
+  /** Feed: a food mid-flight toward the open mouth. */
+  @Test fun feed() = shot("33_feed_unfolded", "FEED", listOf(0.5f to 0.3f), after = 220)
+  @Config(qualifiers = FOLDED) @Test fun feedFolded() = shot("34_feed_folded", "FEED", listOf(0.5f to 0.18f), after = 220)
   @Config(qualifiers = FOLDED) @Test fun fireworksFolded() = shot("32_fireworks_folded", "FIREWORKS", fireTaps, after = 520)
   /** A start name from an older version (a removed mode) opens the menu instead of crashing. */
   @Test fun removedModeNameOpensTheMenu() {
