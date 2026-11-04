@@ -43,7 +43,7 @@ val MODE_BG = mapOf(Mode.BALLOONS to (Color(0xFFBDE3FF) to Color(0xFFFFE3EF)), M
   Mode.AQUARIUM to (Color(0xFF8FE3FF) to Color(0xFF4E8DF0)), Mode.BUBBLES to (Color(0xFFC8F3FF) to Color(0xFF7FD3F5)),
   Mode.VEHICLES to (Color(0xFFFFF0C9) to Color(0xFFFFD58A)),
   Mode.DRUMS to (Color(0xFFFFE1D2) to Color(0xFFFFB9A0)), Mode.PEEKABOO to (Color(0xFFFFF3CF) to Color(0xFFFFD9A8)),
-  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.FIREWORKS to (Color(0xFF1B2470) to Color(0xFF0A0E33)), Mode.FEED to (Color(0xFFFFF1C9) to Color(0xFFFFC2DA)), Mode.WASH to (Color(0xFFC8EEFF) to Color(0xFF7CCBF5)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
+  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.FIREWORKS to (Color(0xFF1B2470) to Color(0xFF0A0E33)), Mode.FEED to (Color(0xFFFFF1C9) to Color(0xFFFFC2DA)), Mode.WASH to (Color(0xFFC8EEFF) to Color(0xFF7CCBF5)), Mode.STICKERS to (Color(0xFFE7DDFF) to Color(0xFFFFC6E2)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
 
 /** Animated picture icon for each mode (no text). */
 fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f) {
@@ -91,6 +91,11 @@ fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f
         drawRoundRect(Color.White, Offset(rc.left + s * 0.1f, c.y + s * 0.16f), Size(s * 0.8f, s * 0.3f), CornerRadius(s * 0.08f))
         for (i in 0 until 5) drawFoam(Offset(rc.left + s * (0.16f + i * 0.17f), c.y + s * 0.17f + sin(t * 3f + i) * s * 0.01f), s * 0.06f, 1f)
         for (i in 0 until 3) { val b = ((t * 0.4f + i * 0.33f) % 1f); drawFoam(Offset(c.x - s * 0.2f + i * s * 0.2f, c.y + s * 0.1f - b * s * 0.45f), s * 0.035f, 1f - b) } }
+      Mode.STICKERS -> { val k = (t * 0.6f) % 1f
+        drawSticker(StickerKind.STAR, Critter.DOG, Offset(c.x - s * 0.18f, c.y - s * 0.17f), s * 0.17f, t)
+        drawSticker(StickerKind.HEART, Critter.DOG, Offset(c.x + s * 0.2f, c.y - s * 0.12f), s * 0.15f, t)
+        val sc = if (k < 0.25f) 1.35f - k * 1.4f else 1f
+        rotate(-8f, Offset(c.x, c.y + s * 0.18f)) { scale(sc, Offset(c.x, c.y + s * 0.18f)) { drawSticker(StickerKind.ANIMAL, Critter.CAT, Offset(c.x, c.y + s * 0.18f), s * 0.19f, t) } } }
       Mode.BEDTIME -> { for (i in 0 until 6) drawStar(Offset(rc.left + s * ((i * 41 % 100) / 100f), rc.top + s * ((i * 23 % 60) / 100f)), s * 0.018f, Color.White.copy(alpha = 0.4f + 0.3f * sin(t + i)))
         val mc = Offset(rc.left + s * 0.72f, rc.top + s * 0.27f); drawCircle(Color(0xFFFFF1B8), s * 0.13f, mc); drawCircle(MODE_BG.getValue(Mode.BEDTIME).first, s * 0.11f, mc + Offset(s * 0.06f, -s * 0.03f))
         drawCritter(Critter.CAT, Offset(c.x - s * 0.05f, c.y + s * 0.17f), s * 0.2f * (1 + 0.03f * sin(t * 1.5f)), Offset.Zero, 1f, 0f)
@@ -100,7 +105,9 @@ fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f
   drawRoundRect(Color.White.copy(alpha = 0.7f), rc.topLeft, rc.size, CornerRadius(rad), style = Stroke(rc.minDimension * 0.02f))
 }
 
-private class MenuModel {
+internal class MenuModel {
+  /** Size of the parent gear's top-right corner, in px; tiles stay out of it. */
+  var gear = 0f
   var w = 1f; var h = 1f; var t = 0f; var lastTouch = 0f; var px = 0f; var py = 0f; var tx = 0f; var ty = 0f
   val hit = HashMap<Int, Float>(); val parts = Particles()
   var picking: Mode? = null; var pickAt = 0f
@@ -109,15 +116,23 @@ private class MenuModel {
     val pad = min(w, h) * 0.06f; val top = pad * 1.4f
     if (n <= 1) return listOf(Rect(w * 0.2f, h * 0.15f, w * 0.8f, h * 0.85f))
     return if (w > h) {
-      val hw = min(w * 0.36f, h - top - pad); val hero = Rect(pad * 1.2f, (h - hw) / 2 + top * 0.3f, pad * 1.2f + hw, (h + hw) / 2 + top * 0.3f)
-      val rest = Layout.grid(n - 1, w - hero.right - pad, h - top - pad * 0.5f, pad * 0.55f, square = true).map { it.translate(Offset(hero.right + pad * 0.3f, top - pad * 0.25f)) }
-      listOf(hero) + rest
+      // Candidates: hero at 36/32/28% of the width, grid full / clear of the gear's column / below the gear's row. Take the first
+      // that misses the gear; if its tiles are under 30% of the hero (short phones), take the one with the biggest tiles.
+      fun layout(frac: Float, cutW: Float, cutTop: Float): List<Rect> {
+        val hw = min(w * frac, h - top - pad); val hero = Rect(pad * 1.2f, (h - hw) / 2 + top * 0.3f, pad * 1.2f + hw, (h + hw) / 2 + top * 0.3f)
+        val y0 = max(top - pad * 0.25f, cutTop)
+        return listOf(hero) + Layout.grid(n - 1, w - hero.right - pad - cutW, h - y0 - pad * 0.75f, pad * 0.55f, square = true).map { it.translate(Offset(hero.right + pad * 0.3f, y0)) }
+      }
+      val options = listOf(0.36f, 0.32f, 0.28f).flatMap { f -> listOf(layout(f, 0f, 0f), layout(f, gear, 0f), layout(f, 0f, gear)) }
+      val clear = options.filter { o -> o.none { it.overlaps(gearRect) } }.ifEmpty { options }
+      if (clear[0].drop(1).all { it.width >= clear[0][0].width * 0.3f }) clear[0] else clear.maxBy { it[1].width }
     } else {
-      val hs = min(w - pad * 2, h * 0.3f); val hero = Rect((w - hs) / 2, top, (w + hs) / 2, top + hs)
+      val hs = min(min(w - pad * 2, h * 0.3f), if (gear > 0f) w - gear * 2.2f else w); val hero = Rect((w - hs) / 2, top, (w + hs) / 2, top + hs)
       val rest = Layout.grid(n - 1, w - pad * 0.6f, h - hero.bottom - pad * 0.5f, pad * 0.45f, square = true).map { it.translate(Offset(pad * 0.3f, hero.bottom + pad * 0.1f)) }
       listOf(hero) + rest
     }
   }
+  private val gearRect get() = Rect(w - gear, 0f, w, gear)
   fun step(dt: Float) { px += (tx - px) * min(1f, dt * 3f); py += (ty - py) * min(1f, dt * 3f); parts.step(dt) }
 }
 
@@ -132,7 +147,7 @@ fun MenuScreen(modes: List<Mode>, onPick: (Mode) -> Unit) {
     if (i >= 0) { if (m.picking == null) { m.hit[i] = m.t; m.picking = modes[i]; m.pickAt = m.t; Audio.play(Sfx.chime); Fx.tap(); m.parts.burst(p.x, p.y, 24, Pal.vivid, kind = 4, speed = 1000f, size = rects[i].width * 0.035f) } }
     else { Audio.play(Sfx.bells[(p.x / m.w * 9).toInt().coerceIn(0, 9)], 0.35f); m.parts.burst(p.x, p.y, 8, listOf(Color.White, Pal.sun), kind = 1, speed = 400f, size = 14f) }
   })) {
-    val t = time.value; val mm = min(size.width, size.height)
+    val t = time.value; val mm = min(size.width, size.height); m.gear = 80.dp.toPx()
     val px = m.px * mm + sin(t * 0.15f) * mm * 0.02f; val py = m.py * mm * 0.5f
     meshBg(Color(0xFFB9E2FF), Color(0xFFFFEEF5), listOf(Pal.lilac to Offset(0.9f, 0.3f), Color(0xFFFFF0C2) to Offset(0.08f, 0.05f), Pal.blush to Offset(0.2f, 0.9f)), t)
     val sunC = Offset(size.width * 0.1f - px * 0.02f, size.height * 0.1f - py * 0.02f)

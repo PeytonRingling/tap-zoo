@@ -99,6 +99,10 @@ object Sfx {
   /** Shower: a soft hiss with a few drips on top. */
   val shower by lazy { mix(tone(3000.0, 2500.0, 1.2, noise = 0.97, decay = 1.5, gain = 0.45),
     seq(silence(0.1), plip, silence(0.18), plip, silence(0.25), plip, silence(0.2), plip)) }
+  /** Sticker peel: a quick rising papery rip. */
+  val peel by lazy { tone(500.0, 2600.0, 0.2, noise = 0.85, decay = 1.2, gain = 0.4) }
+  /** Sticker slap: a soft low thump with a papery smack on top. */
+  val thwack by lazy { mix(tone(170.0, 70.0, 0.13, noise = 0.3, decay = 4.0, gain = 0.8), tone(1800.0, 600.0, 0.04, noise = 0.9, decay = 6.0, gain = 0.4)) }
   /** Soft rubbery squeak: an idle balloon wiggling for attention. */
   val squeak by lazy { tone(700.0, 1150.0, 0.16, vib = 60.0, vibRate = 28.0, harm = 0.4, decay = 2.0, gain = 0.5) }
 
@@ -106,7 +110,7 @@ object Sfx {
    *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
   fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
     listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, zoom, kick, tom, snare, cymbal, march, whoosh) +
-    comboNotes + listOf(squeak, crackle, chomp, burp, scrub, shower)
+    comboNotes + listOf(squeak, crackle, chomp, burp, scrub, shower, peel, thwack)
 }
 
 /** Pure software mixer (no Android types, unit-tested). Voices are capped so chaos stays pleasant; when a new sound would

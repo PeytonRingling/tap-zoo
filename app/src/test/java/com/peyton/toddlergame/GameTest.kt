@@ -19,7 +19,7 @@ class GameTest {
   }
   @Test fun prewarmCoversEverySoundAtTheNewRate() {
     val all = Sfx.prewarm()
-    assertEquals(Critter.entries.size + 10 + 10 + 4 + 18 + 10 + 6, all.size)
+    assertEquals(Critter.entries.size + 10 + 10 + 4 + 18 + 10 + 8, all.size)
     all.forEach { s -> assertTrue(s.isNotEmpty()); assertTrue(s.all { it.isFinite() && kotlin.math.abs(it) <= 1.5f }) }
     assertEquals(44100, Sfx.RATE); assertEquals((Sfx.RATE * 0.9).toInt(), Sfx.bells[0].size)   // durations in seconds unchanged
   }
