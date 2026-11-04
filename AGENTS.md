@@ -41,6 +41,8 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â
   extra spark layers; every 6th rocket is a smiley or cat face; 12 silent fireflies drift and glow brighter between taps.
 * Feed the monster (`FeedModel`, FeedTest): tap a food, or anywhere (feeds the nearest), and it flies into the mouth; drag and let
   go anywhere hops it in. Burp every 5th bite. Foods always respawn. No music.
+  Foods: apple, banana, lemon (pucker), carrot (crunch), cupcake (wiggle). Food within 1.6 monster radii: mouth extra wide + lean.
+  Each bite turns the tummy the food's colour and shifts the body hue 20% (`hueToward`, never grey); bite 10 = round belly + 3 s dance.
 * Wash the animal (`WashModel`, WashTest): rub or tap the mud (3 rubs a splat, twice as hard after 10 s); every touch foams and
   squeaks. At 20% mud left: shower, animal sound, next friend walks in. Music: the `WASH` slot (Beachfront Celebration).
 * Menu layout (`MenuModel.rects`, MenuLayoutTest): 11 tiles must fit phone, phone landscape and both Fold screens, â‰¥ 90 dp each and

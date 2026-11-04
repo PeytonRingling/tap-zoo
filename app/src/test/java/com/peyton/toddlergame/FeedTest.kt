@@ -38,23 +38,23 @@ class FeedTest {
   }
 
   @Test fun tappingEmptySpaceFeedsTheNearestFood() {
-    val (m, s) = model(); val target = m.at(FoodKind.MELON)
+    val (m, s) = model(); val target = m.at(FoodKind.LEMON)
     m.tap(1, target + Offset(0f, m.foodR * 2.5f))
-    assertEquals(FoodState.FLYING, m.foods.first { it.kind == FoodKind.MELON }.state)
+    assertEquals(FoodState.FLYING, m.foods.first { it.kind == FoodKind.LEMON }.state)
     assertTrue(s.plays.isNotEmpty()); m.advance(1f); assertEquals(1, m.eaten)
   }
 
   @Test fun draggingCarriesTheFoodAndLettingGoAnywhereHopsItIn() {
-    val (m, _) = model(); val f = m.foods.first { it.kind == FoodKind.COOKIE }
-    m.down(3, m.at(FoodKind.COOKIE)); assertEquals(FoodState.HELD, f.state)
+    val (m, _) = model(); val f = m.foods.first { it.kind == FoodKind.CAKE }
+    m.down(3, m.at(FoodKind.CAKE)); assertEquals(FoodState.HELD, f.state)
     m.advance(0.1f); assertTrue("mouth opens while a finger is down", m.mouthOpen > 0.5f)
     m.move(3, Offset(W * 0.1f, H * 0.6f)); assertEquals(W * 0.1f, f.x, 0.1f)
     m.up(3); assertEquals(FoodState.FLYING, f.state); m.advance(1f); assertEquals(1, m.eaten)
   }
 
   @Test fun droppingRightOnTheMouthEatsAtOnce() {
-    val (m, s) = model(); val f = m.foods.first { it.kind == FoodKind.CARROT }
-    m.down(1, m.at(FoodKind.CARROT)); m.move(1, m.mouth); m.up(1)
+    val (m, s) = model(); val f = m.foods.first { it.kind == FoodKind.APPLE }
+    m.down(1, m.at(FoodKind.APPLE)); m.move(1, m.mouth); m.up(1)
     assertEquals(FoodState.EATEN, f.state); assertEquals(1, s.count(Sfx.chomp))
   }
 
@@ -62,7 +62,53 @@ class FeedTest {
     val (m, s) = model()
     repeat(10) { m.tap(it.toLong(), m.at(FoodKind.entries[it % 5])); m.advance(1.2f) }
     assertEquals(10, m.eaten); assertEquals(2, s.count(Sfx.burp))
-    assertEquals("tummy back to normal after 10", 1f, m.tummy, 0.001f)
+    m.advance(FeedModel.DANCE); assertEquals("tummy back to normal after the dance", 1f, m.tummy, 0.001f)
+  }
+
+  @Test fun eachFoodGetsItsOwnReaction() {
+    val (m, s) = model()
+    fun bite(k: FoodKind): Reaction { s.clear(); m.tap(1, m.at(k)); m.advance(FeedModel.FLY + 0.05f); val r = m.reaction; m.advance(1.2f); return r }
+    assertEquals(Reaction.PUCKER, bite(FoodKind.LEMON)); assertEquals("sour!", 1, s.count(Sfx.pucker))
+    assertEquals(Reaction.CRUNCH, bite(FoodKind.CARROT)); assertEquals(1, s.count(Sfx.crunch)); assertEquals("crunch instead of chomp", 0, s.count(Sfx.chomp))
+    assertEquals(Reaction.WIGGLE, bite(FoodKind.CAKE)); assertEquals(1, s.count(Sfx.giggle)); assertEquals(1, s.count(Sfx.chime))
+    assertEquals(Reaction.YUM, bite(FoodKind.APPLE)); assertEquals(1, s.count(Sfx.chomp))
+    assertFalse("reactions end", m.reacting(Reaction.YUM))
+  }
+
+  private fun dist(a: androidx.compose.ui.graphics.Color, b: androidx.compose.ui.graphics.Color) =
+    kotlin.math.abs(a.red - b.red) + kotlin.math.abs(a.green - b.green) + kotlin.math.abs(a.blue - b.blue)
+
+  @Test fun theMonsterTintsTowardWhatItAte() {
+    val (m, _) = model()
+    m.tap(1, m.at(FoodKind.LEMON)); m.advance(1.6f)
+    assertEquals("tummy shows the lemon right away", LEMON, m.tummyColor)
+    assertTrue("more lemony", dist(m.tint, LEMON) < dist(FeedModel.BODY, LEMON))
+    val afterOne = dist(m.tint, LEMON); m.tap(2, m.at(FoodKind.LEMON)); m.advance(1.6f)
+    assertTrue("two lemons, yellower still", dist(m.tint, LEMON) < afterOne)
+    assertTrue("still mostly a monster after one bite", dist(m.tint, FeedModel.BODY) > 0f)
+    val mx = maxOf(m.tint.red, m.tint.green, m.tint.blue); val mn = minOf(m.tint.red, m.tint.green, m.tint.blue)
+    assertTrue("stays bright and colourful, not grey", mx >= 0.74f && (mx - mn) / mx >= 0.44f)
+  }
+
+  @Test fun tenBitesGiveARoundBellyThenAHappyDance() {
+    val (m, s) = model(); val bellies = ArrayList<Float>()
+    repeat(9) { m.tap(it.toLong(), m.at(FoodKind.entries[it % 5])); m.advance(1.2f); bellies += m.belly }
+    assertEquals(bellies.sorted(), bellies); assertEquals(1f, bellies.last(), 0.001f); assertFalse(m.dancing())
+    m.tap(20, m.at(FoodKind.APPLE)); m.advance(FeedModel.FLY + 0.05f)
+    assertTrue("10th bite: dance", m.dancing()); assertEquals(1, s.count(Sfx.march)); assertEquals(1f, m.belly, 0f)
+    val n = m.eaten; m.tap(21, m.at(FoodKind.CAKE)); m.advance(FeedModel.FLY + 0.05f); assertEquals("still feeds while dancing", n + 1, m.eaten)
+    m.advance(FeedModel.DANCE); assertFalse(m.dancing()); assertEquals(FeedModel.BODY, m.tint); assertNull(m.tummyColor)
+  }
+
+  @Test fun mouthOpensWideAndLeansTowardFoodThatsClose() {
+    val (m, _) = model(); val f = m.foods.first { it.kind == FoodKind.BANANA }
+    m.down(1, m.at(FoodKind.BANANA)); m.advance(0.4f)
+    assertEquals("far away: just open", 1f, m.mouthOpen, 0.1f); assertEquals(0f, m.lean, 0.05f)
+    m.move(1, m.mouth + Offset(m.monsterR * 1.2f, -m.monsterR * 0.8f)); m.advance(0.5f)
+    assertTrue("wide open: ${m.mouthOpen}", m.mouthOpen > 1.25f); assertTrue("leans right: ${m.lean}", m.lean > 0.4f)
+    m.move(1, m.mouth + Offset(-m.monsterR * 1.2f, -m.monsterR * 0.8f)); m.advance(0.5f); assertTrue("leans left", m.lean < -0.4f)
+    m.up(1); assertEquals(FoodState.FLYING, f.state); m.advance(2f)
+    assertEquals(0f, m.lean, 0.05f); assertTrue("closes again", m.mouthOpen < 0.1f)
   }
 
   @Test fun tappingTheMonsterMakesItGiggle() {

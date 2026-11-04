@@ -50,6 +50,23 @@ class ScreensTest {
     for ((setup, ms) in steps) { rule.runOnIdle { m.touched(); setup(m) }; rule.mainClock.advanceTimeBy(ms) }
     rule.onRoot().captureRoboImage("$out/$name.png")
   }
+  /** Feed with a scripted model: each step runs [setup] then lets [ms] pass. */
+  private fun feedShot(name: String, vararg steps: Pair<(FeedModel) -> Unit, Long>) {
+    rule.mainClock.autoAdvance = false
+    val m = FeedModel(FakeSink(), kotlin.random.Random(2))
+    rule.setContent { Box(Modifier.fillMaxSize()) { FeedScreenFor(m) } }
+    rule.mainClock.advanceTimeBy(1000)
+    for ((setup, ms) in steps) { rule.runOnIdle { setup(m) }; rule.mainClock.advanceTimeBy(ms) }
+    rule.onRoot().captureRoboImage("$out/$name.png")
+  }
+  private fun FeedModel.food(k: FoodKind) = foods.first { it.kind == k }.let { Offset(it.x, it.y) }
+  private val holdNear: (FeedModel) -> Unit = { m -> m.down(1, m.food(FoodKind.BANANA)); m.move(1, m.mouth + Offset(m.monsterR * 1.1f, -m.monsterR * 0.9f)) }
+  private val lemon: (FeedModel) -> Unit = { m -> m.down(2, m.food(FoodKind.LEMON)); m.up(2) }
+  private val tenBites = (0 until 10).map { i -> { m: FeedModel -> m.down(10L + i, m.food(FoodKind.entries[i % 5])); m.up(10L + i) } to 1600L }.toTypedArray()
+  @Test fun feedLeanWide() = feedShot("44_feed_lean_wide", holdNear to 500L)
+  @Test fun feedPucker() = feedShot("45_feed_lemon_pucker", lemon to 650L)
+  @Test fun feedDance() = feedShot("46_feed_full_dance", *tenBites.dropLast(1).toTypedArray(), tenBites.last().first to 900L)
+  @Config(qualifiers = FOLDED) @Test fun feedLeanWideFolded() = feedShot("47_feed_lean_wide_folded", holdNear to 500L)
   private val popSome: (BalloonModel) -> Unit = { m -> m.balloons.filter { it.live && it.y < m.h }.take(3).forEach { m.pop(it) } }
   private val animal: (BalloonModel) -> Unit = { m -> m.make(m.w * 0.7f, m.h * 0.5f, kind = BKind.ANIMAL) }
   private val parachute: (BalloonModel) -> Unit = { m -> m.pop(m.make(m.w * 0.3f, m.h * 0.25f, kind = BKind.ANIMAL)) }
