@@ -24,6 +24,8 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â
   `Random`, so their behaviour is unit-tested in GameModelsTest. Don't call `Audio.play`/`AnimalSounds.play`/`Fx.tap` from model code.
 * Background music: which track plays where is the `MusicDirector` table (pure, MusicDirectorTest); tracks load by name and a
   missing one is silence. Music volume (`mvol`) and per-slot switches (`musslots`) are separate from the SFX volume (`vol`).
+  `musknown` records which slots existed when `musslots` was saved; a slot added later starts ON (`MusicDirector.migrate`), so a
+  new mode's music is never off by accident after an update. When adding a slot, keep `V10_SLOTS` as is.
 * Downloaded audio in `app/src/main/res/raw` (Kevin MacLeod music, CC BY 4.0; CC0 balloon pop) is rebuilt by tools/prepare_audio.py and
   must stay credited in SOUND_CREDITS.md **and** in the app (`CREDITS` in Menu.kt, Parent settings â€º Credits). Recorded one-shots
   (`Samples`) are 16-bit WAV loaded by name with a synthesized fallback.
@@ -37,6 +39,8 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â
   every 0.3 s. Caps: 6 rockets (the oldest bursts early), 900 sparks (the oldest drop), whoosh/boom throttled. No music.
 * Feed the monster (`FeedModel`, FeedTest): tap a food, or anywhere (feeds the nearest), and it flies into the mouth; drag and let
   go anywhere hops it in. Burp every 5th bite. Foods always respawn. No music.
+* Wash the animal (`WashModel`, WashTest): rub or tap the mud (3 rubs a splat, twice as hard after 10 s); every touch foams and
+  squeaks. At 20% mud left: shower, animal sound, next friend walks in. Music: the `WASH` slot (Beachfront Celebration).
 * Audio: one output thread at a time (generation counter in `Audio`); the `Mixer` fades a stolen voice over 5 ms instead of cutting it.
 * **Never run the Android emulator.** It crashes the build box. Verify UI with the Robolectric renders.
 * **Signing:** must stay `~/.android/debug.keystore`, cert SHA-256 `65f0d4cb5041d1d60f2fbbb44d0bc73174de9ea1668be0038129630a6a4d113f`.

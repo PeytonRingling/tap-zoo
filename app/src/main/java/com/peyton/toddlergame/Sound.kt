@@ -94,6 +94,11 @@ object Sfx {
     mix(tone(200.0, 100.0, 0.08, noise = 0.55, decay = 5.0), tone(2000.0, 1000.0, 0.045, noise = 0.8, decay = 6.0, gain = 0.35))) }
   /** Friendly cartoon burp: a low wobbly croak. */
   val burp by lazy { tone(120.0, 85.0, 0.45, vib = 18.0, vibRate = 22.0, harm = 0.8, decay = 2.0, noise = 0.15, gain = 0.7) }
+  /** Squeaky scrub-a-dub: a quick rubbery squeak with a soapy hiss. */
+  val scrub by lazy { mix(tone(950.0, 1400.0, 0.12, vib = 90.0, vibRate = 38.0, harm = 0.3, decay = 2.5, gain = 0.6), tone(4000.0, 3000.0, 0.1, noise = 0.95, decay = 4.0, gain = 0.25)) }
+  /** Shower: a soft hiss with a few drips on top. */
+  val shower by lazy { mix(tone(3000.0, 2500.0, 1.2, noise = 0.97, decay = 1.5, gain = 0.45),
+    seq(silence(0.1), plip, silence(0.18), plip, silence(0.25), plip, silence(0.2), plip)) }
   /** Soft rubbery squeak: an idle balloon wiggling for attention. */
   val squeak by lazy { tone(700.0, 1150.0, 0.16, vib = 60.0, vibRate = 28.0, harm = 0.4, decay = 2.0, gain = 0.5) }
 
@@ -101,7 +106,7 @@ object Sfx {
    *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
   fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
     listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, zoom, kick, tom, snare, cymbal, march, whoosh) +
-    comboNotes + listOf(squeak, crackle, chomp, burp)
+    comboNotes + listOf(squeak, crackle, chomp, burp, scrub, shower)
 }
 
 /** Pure software mixer (no Android types, unit-tested). Voices are capped so chaos stays pleasant; when a new sound would

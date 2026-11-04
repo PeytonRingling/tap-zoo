@@ -18,17 +18,19 @@ class MusicDirectorTest {
     // Bubbles prefers its own track and falls back to the Balloons one while it isn't packaged.
     assertEquals("music_balloons", pick(Mode.BUBBLES)?.name)
     assertEquals("music_bubbles", pick(Mode.BUBBLES, files = shipped + "music_bubbles")?.name)
-    val silent = Mode.entries - setOf(Mode.BALLOONS, Mode.BUBBLES, Mode.BEDTIME)
+    assertEquals("Wash reuses the Balloons track when Bubbles' isn't packaged", "music_balloons", pick(Mode.WASH)?.name)
+    assertEquals("music_bubbles", pick(Mode.WASH, files = shipped + "music_bubbles")?.name)
+    val silent = Mode.entries - setOf(Mode.BALLOONS, Mode.BUBBLES, Mode.WASH, Mode.BEDTIME)
     silent.forEach { assertNull("$it", pick(it)) }
   }
 
   @Test fun switchesOffSilenceOnlyTheirSlot() {
     for (off in MusicSlot.entries) {
       val on = all - off
-      val screen = when (off) { MusicSlot.MENU -> null; MusicSlot.BALLOONS -> Mode.BALLOONS; MusicSlot.BUBBLES -> Mode.BUBBLES }
+      val screen = when (off) { MusicSlot.MENU -> null; MusicSlot.BALLOONS -> Mode.BALLOONS; MusicSlot.BUBBLES -> Mode.BUBBLES; MusicSlot.WASH -> Mode.WASH }
       assertNull("$off", pick(screen, on))
       (MusicSlot.entries - off).forEach { other ->
-        val s = when (other) { MusicSlot.MENU -> null; MusicSlot.BALLOONS -> Mode.BALLOONS; MusicSlot.BUBBLES -> Mode.BUBBLES }
+        val s = when (other) { MusicSlot.MENU -> null; MusicSlot.BALLOONS -> Mode.BALLOONS; MusicSlot.BUBBLES -> Mode.BUBBLES; MusicSlot.WASH -> Mode.WASH }
         assertTrue("$other with $off off", pick(s, on) != null)
       }
     }
@@ -58,10 +60,15 @@ class MusicDirectorTest {
     assertEquals(all, MusicDirector.migrate(null, true, true))
     assertEquals(all - MusicSlot.MENU, MusicDirector.migrate(null, false, true))
     assertEquals(all - MusicSlot.BALLOONS, MusicDirector.migrate(null, true, false))
-    assertEquals(setOf(MusicSlot.BUBBLES), MusicDirector.migrate(null, false, false))
-    // Once the new set is saved it wins, even over old keys; junk names are ignored; empty means all off.
-    assertEquals(setOf(MusicSlot.MENU), MusicDirector.migrate(setOf("MENU", "NOPE"), false, false))
-    assertEquals(emptySet<MusicSlot>(), MusicDirector.migrate(emptySet(), true, true))
+    assertEquals(setOf(MusicSlot.BUBBLES, MusicSlot.WASH), MusicDirector.migrate(null, false, false))
+    // Once the new set is saved it wins, even over old keys; junk names are ignored; empty means all off (for slots it knew).
+    // Saved by v10/v11 (no "known" list): Wash didn't exist yet, so it starts on.
+    assertEquals(setOf(MusicSlot.MENU, MusicSlot.WASH), MusicDirector.migrate(setOf("MENU", "NOPE"), false, false))
+    assertEquals(setOf(MusicSlot.WASH), MusicDirector.migrate(emptySet(), true, true))
+    // Saved by this version: a parent who switched Wash off keeps it off.
+    val now = MusicSlot.entries.map { it.name }.toSet()
+    assertEquals(setOf(MusicSlot.MENU), MusicDirector.migrate(setOf("MENU"), null, null, now))
+    assertEquals(emptySet<MusicSlot>(), MusicDirector.migrate(emptySet(), null, null, now))
   }
 
   @Test fun duckFallsFastHoldsThenRecoversSmoothly() {
