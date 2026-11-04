@@ -114,6 +114,11 @@ object Sfx {
   /** Elephant trumpet: a brassy rising toot with wobble. */
   val trumpet by lazy { tone(330.0, 620.0, 0.55, vib = 25.0, vibRate = 9.0, harm = 0.95, decay = 1.6, noise = 0.08, gain = 0.6) }
   /** Sheep baa: a bleaty wobble. */
+  /** Pond plops: a rising water "bloop" over a little splash hiss, three pitches so taps don't sound identical. */
+  val plops by lazy { listOf(260.0, 330.0, 400.0).map { f -> mix(tone(f, f * 2.6, 0.11, harm = 0.0, decay = 4.0, gain = 0.75),
+    tone(2600.0, 1600.0, 0.14, noise = 0.95, decay = 5.0, gain = 0.22)) } }
+  /** Pond wake: a soft swishy hiss while a finger drags through the water. */
+  val swish by lazy { tone(1400.0, 900.0, 0.22, noise = 0.97, decay = 3.5, gain = 0.22) }
   val baa by lazy { seq(tone(420.0, 380.0, 0.5, vib = 30.0, vibRate = 24.0, harm = 0.85, decay = 1.8, noise = 0.05, gain = 0.6)) }
   /** Soft rubbery squeak: an idle balloon wiggling for attention. */
   val squeak by lazy { tone(700.0, 1150.0, 0.16, vib = 60.0, vibRate = 28.0, harm = 0.4, decay = 2.0, gain = 0.5) }
@@ -122,7 +127,7 @@ object Sfx {
    *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
   fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
     listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, zoom, kick, tom, snare, cymbal, march, whoosh) +
-    comboNotes + listOf(squeak, crackle, chomp, burp, scrub, shower, twinkle, bigBoom, pucker, crunch, splash, blowDry, trumpet, baa)
+    comboNotes + listOf(squeak, crackle, chomp, burp, scrub, shower, twinkle, bigBoom, pucker, crunch, splash, blowDry, trumpet, baa, swish) + plops
 }
 
 /** Pure software mixer (no Android types, unit-tested). Voices are capped so chaos stays pleasant; when a new sound would

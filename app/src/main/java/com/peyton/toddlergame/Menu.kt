@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -43,7 +44,7 @@ val MODE_BG = mapOf(Mode.BALLOONS to (Color(0xFFBDE3FF) to Color(0xFFFFE3EF)), M
   Mode.AQUARIUM to (Color(0xFF8FE3FF) to Color(0xFF4E8DF0)), Mode.BUBBLES to (Color(0xFFC8F3FF) to Color(0xFF7FD3F5)),
   Mode.VEHICLES to (Color(0xFFFFF0C9) to Color(0xFFFFD58A)),
   Mode.DRUMS to (Color(0xFFFFE1D2) to Color(0xFFFFB9A0)), Mode.PEEKABOO to (Color(0xFFFFF3CF) to Color(0xFFFFD9A8)),
-  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.FIREWORKS to (Color(0xFF1B2470) to Color(0xFF0A0E33)), Mode.FEED to (Color(0xFFFFF1C9) to Color(0xFFFFC2DA)), Mode.WASH to (Color(0xFFC8EEFF) to Color(0xFF7CCBF5)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
+  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.FIREWORKS to (Color(0xFF1B2470) to Color(0xFF0A0E33)), Mode.FEED to (Color(0xFFFFF1C9) to Color(0xFFFFC2DA)), Mode.WASH to (Color(0xFFC8EEFF) to Color(0xFF7CCBF5)), Mode.POND to (Color(0xFF7FD8F0) to Color(0xFF2F8FC4)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
 
 /** Animated picture icon for each mode (no text). */
 fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f) {
@@ -91,6 +92,11 @@ fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f
         drawRoundRect(Color.White, Offset(rc.left + s * 0.1f, c.y + s * 0.16f), Size(s * 0.8f, s * 0.3f), CornerRadius(s * 0.08f))
         for (i in 0 until 5) drawFoam(Offset(rc.left + s * (0.16f + i * 0.17f), c.y + s * 0.17f + sin(t * 3f + i) * s * 0.01f), s * 0.06f, 1f)
         for (i in 0 until 3) { val b = ((t * 0.4f + i * 0.33f) % 1f); drawFoam(Offset(c.x - s * 0.2f + i * s * 0.2f, c.y + s * 0.1f - b * s * 0.45f), s * 0.035f, 1f - b) } }
+      Mode.POND -> { for (i in 0 until 3) { val k = ((t * 0.5f + i / 3f) % 1f); val rr = s * (0.08f + 0.3f * k)
+          drawOval(Color.White.copy(alpha = 0.8f * (1 - k)), Offset(c.x - rr, c.y + s * 0.12f - rr * 0.6f), Size(rr * 2, rr * 1.2f), style = Stroke(s * 0.015f)) }
+        drawArc(Color(0xFF5DBB63), 20f, 320f, true, Offset(rc.left + s * 0.08f, rc.top + s * 0.62f), Size(s * 0.26f, s * 0.26f))
+        val hop = abs(sin(t * 1.6f)) * s * 0.04f
+        drawCritter(Critter.FROG, Offset(c.x, c.y - s * 0.02f - hop), s * 0.2f, Offset(sin(t) * 0.4f, 0.2f), 0f, 0.6f) }
       Mode.BEDTIME -> { for (i in 0 until 6) drawStar(Offset(rc.left + s * ((i * 41 % 100) / 100f), rc.top + s * ((i * 23 % 60) / 100f)), s * 0.018f, Color.White.copy(alpha = 0.4f + 0.3f * sin(t + i)))
         val mc = Offset(rc.left + s * 0.72f, rc.top + s * 0.27f); drawCircle(Color(0xFFFFF1B8), s * 0.13f, mc); drawCircle(MODE_BG.getValue(Mode.BEDTIME).first, s * 0.11f, mc + Offset(s * 0.06f, -s * 0.03f))
         drawCritter(Critter.CAT, Offset(c.x - s * 0.05f, c.y + s * 0.17f), s * 0.2f * (1 + 0.03f * sin(t * 1.5f)), Offset.Zero, 1f, 0f)
@@ -187,7 +193,7 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
   val time = rememberTicker()
   val label = TextStyle(fontSize = 18.sp, color = Color(0xFF333344), fontWeight = FontWeight.SemiBold)
   Box(Modifier.fillMaxSize().background(Color(0xCC101020)).pointerInput(Unit) { detectTapGestures { } }, contentAlignment = Alignment.Center) {
-    Column(Modifier.widthIn(max = 600.dp).padding(28.dp).background(Color.White, RoundedCornerShape(28.dp)).verticalScroll(rememberScrollState()).padding(24.dp),
+    Column(Modifier.widthIn(max = 600.dp).padding(28.dp).background(Color.White, RoundedCornerShape(28.dp)).testTag("settings_panel").verticalScroll(rememberScrollState()).padding(24.dp),
       verticalArrangement = Arrangement.spacedBy(14.dp)) {
       BasicText("Parent settings", style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color(0xFF222233)))
       UpdatesRow(label)
@@ -200,10 +206,12 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
         Box(Modifier.size(64.dp, 36.dp).background(if (hap) Color(0xFF6BCB77) else Color(0xFFCCCCD6), RoundedCornerShape(18.dp)).clickable { hap = !hap; Prefs.haptics = hap; Fx.haptics = hap; Fx.tap() },
           contentAlignment = if (hap) Alignment.CenterEnd else Alignment.CenterStart) { Box(Modifier.padding(4.dp).size(28.dp).background(Color.White, RoundedCornerShape(14.dp))) }
       }
-      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-        BasicText("Music in", style = label)
+      // Wraps onto a second line instead of scrolling sideways, so every switch (Pond is the 5th) is always visible.
+      @OptIn(ExperimentalLayoutApi::class)
+      FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        BasicText("Music in", style = label, modifier = Modifier.align(Alignment.CenterVertically))
         for (sl in MusicSlot.entries) { val on = sl in slots
-          Box(Modifier.background(if (on) Color(0xFF6BCB77) else Color(0xFFE4E2F2), RoundedCornerShape(14.dp))
+          Box(Modifier.testTag("music_chip_${sl.name}").background(if (on) Color(0xFF6BCB77) else Color(0xFFE4E2F2), RoundedCornerShape(14.dp))
             .clickable { slots = if (on) slots - sl else slots + sl; Prefs.musicSlots = slots; onMusicSlots(slots) }.padding(horizontal = 14.dp, vertical = 8.dp)) {
             BasicText((if (on) "♪ " else "") + sl.label, style = label.copy(color = if (on) Color.White else Color(0xFF333344))) }
         }

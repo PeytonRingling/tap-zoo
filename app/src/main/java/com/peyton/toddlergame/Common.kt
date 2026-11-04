@@ -32,7 +32,7 @@ val RAINBOW = listOf(0xFFFF6B6B, 0xFFFF9F43, 0xFFFFD43B, 0xFF94D82D, 0xFF38D9A9,
 
 /** Every screen a child can be in. [tile] = shown on the menu; Bedtime is started by a parent from Parent settings instead. */
 enum class Mode(val tile: Boolean = true) {
-  BALLOONS, ANIMALS, AQUARIUM, BUBBLES, VEHICLES, DRUMS, PEEKABOO, PAINT, FIREWORKS, FEED, WASH, BEDTIME(tile = false);
+  BALLOONS, ANIMALS, AQUARIUM, BUBBLES, VEHICLES, DRUMS, PEEKABOO, PAINT, FIREWORKS, FEED, WASH, POND, BEDTIME(tile = false);
   companion object { val TILES = entries.filter { it.tile } }
 }
 
@@ -48,8 +48,8 @@ object Prefs {
   /** Menu tiles a parent left on. Names saved by older versions (Garden, Music pads, Night sky, Bedtime) are dropped; if nothing
    *  is left, every tile shows, so the menu is never empty. */
   var enabled: Set<Mode>
-    get() = enabledFrom(sp?.getStringSet("modes", null))
-    set(v) { sp?.edit()?.putStringSet("modes", v.map { it.name }.toSet())?.apply() }
+    get() = enabledFrom(sp?.getStringSet("modes", null), sp?.getStringSet("modeknown", null))
+    set(v) { sp?.edit()?.putStringSet("modes", v.map { it.name }.toSet())?.putStringSet("modeknown", Mode.TILES.map { it.name }.toSet())?.apply() }
   /** Where music plays. First read migrates the old `mmus`/`bmus` switches (see [MusicDirector.migrate]); they're no longer written. */
   var musicSlots: Set<MusicSlot>
     get() { val p = sp ?: return MusicSlot.entries.toSet()
@@ -66,9 +66,17 @@ object Prefs {
   fun volumeGain(v: Int) = v / 5f
 }
 
-/** Parses saved menu tiles: unknown or non-tile names are ignored, and an empty result means "all tiles". */
-fun enabledFrom(stored: Set<String>?): Set<Mode> =
-  stored?.mapNotNull { n -> Mode.entries.firstOrNull { it.name == n && it.tile } }?.toSet()?.ifEmpty { null } ?: Mode.TILES.toSet()
+/** The tiles v12 had, for sets saved before `modeknown` was written. */
+private val V12_TILES = setOf("BALLOONS", "ANIMALS", "AQUARIUM", "BUBBLES", "VEHICLES", "DRUMS", "PEEKABOO", "PAINT", "FIREWORKS", "FEED", "WASH", "STICKERS")
+
+/** Parses saved menu tiles: unknown or non-tile names are ignored, and an empty result means "all tiles". [known] = the tiles that
+ *  existed when [stored] was saved (null = saved by v12 or older): a tile added since then (Splash pond) starts on, so a parent's
+ *  custom menu doesn't silently hide a new mode after an update. */
+fun enabledFrom(stored: Set<String>?, known: Set<String>? = null): Set<Mode> {
+  val kept = stored?.mapNotNull { n -> Mode.entries.firstOrNull { it.name == n && it.tile } }?.toSet()?.ifEmpty { null } ?: return Mode.TILES.toSet()
+  val seen = known ?: V12_TILES
+  return kept + Mode.TILES.filter { it.name !in seen }
+}
 
 object Fx {
   var vib: Vibrator? = null
