@@ -44,7 +44,9 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=�
   Foods: apple, banana, lemon (pucker), carrot (crunch), cupcake (wiggle). Food within 1.6 monster radii: mouth extra wide + lean.
   Each bite turns the tummy the food's colour and shifts the body hue 20% (`hueToward`, never grey); bite 10 = round belly + 3 s dance.
 * Wash the animal (`WashModel`, WashTest): rub or tap the mud (3 rubs a splat, twice as hard after 10 s); every touch foams and
-  squeaks. At 20% mud left: shower, animal sound, next friend walks in. Music: the `WASH` slot (Beachfront Celebration).
+  squeaks. At 20% mud left: RINSE (shower) → SHAKE (splash) → DRY (blow-dryer, rubbing speeds it, finishes alone in 1.6 s) →
+  FLUFFY (voice + sparkles) → next friend. Animals: `WashAnimal` (pig, dog, elephant, sheep + 4 critters; elephant/sheep drawn and
+  voiced in Wash.kt). Belly rub giggles (0.8 s gap); up to 6 soap bubbles float up and pop on tap. Music: the `WASH` slot.
 * Menu layout (`MenuModel.rects`, MenuLayoutTest): 11 tiles must fit phone, phone landscape and both Fold screens, ≥ 90 dp each and
   clear of the parent gear corner.
 * Audio: one output thread at a time (generation counter in `Audio`); the `Mixer` fades a stolen voice over 5 ms instead of cutting it.

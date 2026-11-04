@@ -107,6 +107,14 @@ object Sfx {
   val pucker by lazy { tone(950.0, 480.0, 0.38, vib = 45.0, vibRate = 18.0, harm = 0.2, decay = 2.0, gain = 0.5) }
   /** Carrot crunch: three crisp noisy bites. */
   val crunch by lazy { seq(*(0 until 3).flatMap { listOf(tone(320.0 - it * 40, 180.0, 0.055, noise = 0.95, decay = 7.0, gain = 0.75), silence(0.045)) }.toTypedArray()) }
+  /** Shake-off splash: a wet noisy burst with drips. */
+  val splash by lazy { mix(tone(600.0, 200.0, 0.35, noise = 0.9, decay = 3.0, gain = 0.6), seq(silence(0.12), plip, silence(0.08), plip, silence(0.1), plip)) }
+  /** Blow-dryer: a soft airy hum that fades. */
+  val blowDry by lazy { mix(tone(180.0, 200.0, 1.5, vib = 6.0, vibRate = 30.0, harm = 0.5, decay = 0.8, gain = 0.25), tone(2500.0, 2500.0, 1.5, noise = 0.97, decay = 0.9, gain = 0.3)) }
+  /** Elephant trumpet: a brassy rising toot with wobble. */
+  val trumpet by lazy { tone(330.0, 620.0, 0.55, vib = 25.0, vibRate = 9.0, harm = 0.95, decay = 1.6, noise = 0.08, gain = 0.6) }
+  /** Sheep baa: a bleaty wobble. */
+  val baa by lazy { seq(tone(420.0, 380.0, 0.5, vib = 30.0, vibRate = 24.0, harm = 0.85, decay = 1.8, noise = 0.05, gain = 0.6)) }
   /** Soft rubbery squeak: an idle balloon wiggling for attention. */
   val squeak by lazy { tone(700.0, 1150.0, 0.16, vib = 60.0, vibRate = 28.0, harm = 0.4, decay = 2.0, gain = 0.5) }
 
@@ -114,7 +122,7 @@ object Sfx {
    *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
   fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
     listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, zoom, kick, tom, snare, cymbal, march, whoosh) +
-    comboNotes + listOf(squeak, crackle, chomp, burp, scrub, shower, twinkle, bigBoom, pucker, crunch)
+    comboNotes + listOf(squeak, crackle, chomp, burp, scrub, shower, twinkle, bigBoom, pucker, crunch, splash, blowDry, trumpet, baa)
 }
 
 /** Pure software mixer (no Android types, unit-tested). Voices are capped so chaos stays pleasant; when a new sound would

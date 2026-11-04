@@ -67,6 +67,23 @@ class ScreensTest {
   @Test fun feedPucker() = feedShot("45_feed_lemon_pucker", lemon to 650L)
   @Test fun feedDance() = feedShot("46_feed_full_dance", *tenBites.dropLast(1).toTypedArray(), tenBites.last().first to 900L)
   @Config(qualifiers = FOLDED) @Test fun feedLeanWideFolded() = feedShot("47_feed_lean_wide_folded", holdNear to 500L)
+  /** Wash with a scripted model starting on [who]: each step runs [setup] then lets [ms] pass. */
+  private fun washShot(name: String, who: WashAnimal, vararg steps: Pair<(WashModel) -> Unit, Long>) {
+    rule.mainClock.autoAdvance = false
+    val m = WashModel(FakeSink(), kotlin.random.Random(3), who)
+    rule.setContent { Box(Modifier.fillMaxSize()) { WashScreenFor(m) } }
+    rule.mainClock.advanceTimeBy(1000)
+    for ((setup, ms) in steps) { rule.runOnIdle { setup(m) }; rule.mainClock.advanceTimeBy(ms) }
+    rule.onRoot().captureRoboImage("$out/$name.png")
+  }
+  private val scrubSome: (WashModel) -> Unit = { m -> m.splats.take(4).forEachIndexed { i, s -> m.down(100L + i, m.splatAt(s)); m.up(100L + i) } }
+  private val scrubAll: (WashModel) -> Unit = { m -> repeat(WashModel.RUBS) { m.splats.forEachIndexed { i, s -> if (m.phase == WashPhase.DIRTY) { m.down(200L + i, m.splatAt(s)); m.up(200L + i) } } } }
+  private val noop: (WashModel) -> Unit = {}
+  @Test fun washSheepBubbles() = washShot("48_wash_sheep_bubbles", WashAnimal.SHEEP, noop to 4000L, scrubSome to 250L)
+  @Test fun washElephantShake() = washShot("49_wash_elephant_shake", WashAnimal.ELEPHANT, scrubAll to 1450L)
+  @Test fun washDogDry() = washShot("50_wash_dog_blowdry", WashAnimal.DOG, scrubAll to 2700L)
+  @Test fun washSheepFluffy() = washShot("51_wash_sheep_fluffy", WashAnimal.SHEEP, scrubAll to 3900L)
+  @Config(qualifiers = FOLDED) @Test fun washSheepFluffyFolded() = washShot("52_wash_sheep_fluffy_folded", WashAnimal.SHEEP, scrubAll to 3900L)
   private val popSome: (BalloonModel) -> Unit = { m -> m.balloons.filter { it.live && it.y < m.h }.take(3).forEach { m.pop(it) } }
   private val animal: (BalloonModel) -> Unit = { m -> m.make(m.w * 0.7f, m.h * 0.5f, kind = BKind.ANIMAL) }
   private val parachute: (BalloonModel) -> Unit = { m -> m.pop(m.make(m.w * 0.3f, m.h * 0.25f, kind = BKind.ANIMAL)) }
