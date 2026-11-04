@@ -7,73 +7,86 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
-/** The Balloons overhaul (stream mode, shapes, surprises, combos, idle show), through [SoundSink] with a seeded Random. */
+/** Balloons for an 18-month-old (stream mode, plain round balloons, a rare animal, soft combo, gentle idle), through [SoundSink]
+ *  with a seeded Random. */
 class BalloonsTest {
   private val W = 2208f; private val H = 1840f          // Fold inner, px
   private val FW = 1233f; private val FH = 2391f        // Fold outer (folded), px
 
-  private fun model(seed: Int = 1, stream: Boolean = true, symbols: Boolean = true, w: Float = W, h: Float = H): Pair<BalloonModel, FakeSink> {
-    val s = FakeSink(); val m = BalloonModel(s, Random(seed), stream = stream, symbols = symbols); m.w = w; m.h = h; return m to s
+  private fun model(seed: Int = 1, stream: Boolean = true, w: Float = W, h: Float = H): Pair<BalloonModel, FakeSink> {
+    val s = FakeSink(); val m = BalloonModel(s, Random(seed), stream = stream); m.w = w; m.h = h; return m to s
   }
   private fun BalloonModel.advance(secs: Float, dt: Float = 1 / 60f, each: () -> Unit = {}) { var k = 0f; while (k < secs) { t += dt; step(dt); each(); k += dt } }
   /** Keeps the model "touched" so idle behaviour stays out of the way. */
   private fun BalloonModel.busy(secs: Float, each: () -> Unit = {}) = advance(secs) { touched(); each() }
   private fun BalloonModel.plain(x: Float = w * 0.5f, y: Float = h * 0.25f) = make(x, y, kind = BKind.ROUND)
 
-  @Test fun startsFullAndSpreadOut() {
-    val (m, s) = model(); m.advance(0.05f)
-    assertEquals(7, m.liveCount()); assertTrue(s.plays.isEmpty())
-    val xs = m.balloons.map { it.x }.sorted()
-    assertTrue("spread across the width", xs.first() < W * 0.25f && xs.last() > W * 0.75f)
-    assertEquals("one see-through animal balloon to aim for", 1, m.balloons.count { it.kind == BKind.ANIMAL })
-    assertTrue(m.balloons.none { it.kind == BKind.GIANT || it.kind == BKind.GOLDEN })
-  }
-
-  @Test fun streamKeepsSixToTwelveThroughAPoppingSpree() {
+  @Test fun startsWithAFewBigPlainBalloonsSpreadOut() {
     for ((w, h) in listOf(W to H, FW to FH)) {
-      val (m, _) = model(w = w, h = h); m.busy(3f)
-      val target = m.targetMax; assertTrue(target in BalloonModel.MIN_LIVE..BalloonModel.MAX_LIVE)
-      var minSeen = 99; var maxSeen = 0; var k = 0
-      m.busy(120f) {
-        if (++k % 30 == 0) m.balloons.firstOrNull { it.live && it.y < h }?.let { m.pop(it) }   // a pop every 0.5 s
-        val n = m.liveCount(); maxSeen = max(maxSeen, n); if (k > 120) minSeen = min(minSeen, n)
-        assertTrue("never over the hard cap", n <= BalloonModel.HARD_CAP)
-      }
-      assertTrue("min $minSeen", minSeen >= BalloonModel.MIN_LIVE - 2)   // a burst can briefly dip below 6, the stream refills fast
-      assertTrue("max $maxSeen vs $target", maxSeen <= target + BalloonModel.MINIS)  // only a giant's minis go over target
-      m.balloons.clear(); m.busy(4f); assertTrue("refills an empty sky", m.liveCount() >= BalloonModel.MIN_LIVE)
+      val (m, s) = model(w = w, h = h); m.advance(0.05f)
+      assertEquals(m.targetMax, m.liveCount()); assertTrue(s.plays.isEmpty())
+      val xs = m.balloons.map { it.x }.sorted()
+      assertTrue("spread across the width", xs.first() < w * 0.25f && xs.last() > w * 0.75f)
+      assertTrue("all plain round at the start", m.balloons.all { it.kind == BKind.ROUND })
     }
   }
 
-  @Test fun foldedScreenGetsMoreSmallerOnesInnerGetsFewerBigger() {
+  @Test fun fiveToSevenOnScreen() {
     val (a, _) = model(); val (b, _) = model(w = FW, h = FH)
-    assertEquals(10, a.targetMax); assertEquals(12, b.targetMax)
-    a.advance(0.05f); a.balloons.filter { it.kind != BKind.GOLDEN }.forEach { assertTrue(it.r / H in 0.094f..0.146f) }
+    assertEquals("Fold inner", 6, a.targetMax); assertEquals("folded", 7, b.targetMax)
+    assertTrue(BalloonModel.MIN_LIVE == 5 && BalloonModel.MAX_LIVE == 7)
+  }
+
+  @Test fun streamKeepsFiveToSevenThroughAPoppingSpree() {
+    for ((w, h) in listOf(W to H, FW to FH)) {
+      val (m, _) = model(w = w, h = h); m.busy(3f)
+      var minSeen = 99; var maxSeen = 0; var k = 0
+      m.busy(120f) {
+        if (++k % 30 == 0) m.balloons.firstOrNull { it.live && it.y < h }?.let { m.pop(it) }   // a pop every 0.5 s
+        val n = m.liveCount(); maxSeen = max(maxSeen, n); if (k > 180) minSeen = min(minSeen, n)
+      }
+      assertTrue("min $minSeen", minSeen >= BalloonModel.MIN_LIVE - 2)   // a pop spree briefly dips, the stream refills
+      assertTrue("max $maxSeen vs ${m.targetMax}", maxSeen <= m.targetMax + 1)
+      m.balloons.clear(); m.busy(5f); assertTrue("refills an empty sky", m.liveCount() >= BalloonModel.MIN_LIVE)
+    }
+  }
+
+  @Test fun balloonsAreBigAndOnlyRoundOrAnimal() {
+    val (m, _) = model(seed = 3); m.busy(1f)
+    repeat(300) { m.make(W * ((it * 37) % 100) / 100f, H * 0.4f); if (it % 2 == 0) m.balloons.firstOrNull { b -> b.live }?.let { b -> m.pop(b) }; m.t += 0.1f; m.step(0.1f) }
+    m.balloons.forEach { assertTrue("r ${it.r / H}", it.r / H in BalloonModel.R_MIN..(BalloonModel.R_MIN + BalloonModel.R_SPAN)) }
+    assertTrue(m.balloons.all { it.kind == BKind.ROUND || it.kind == BKind.ANIMAL })
+  }
+
+  @Test fun tappingAPalmFullOfFingersNeverOverfills() {
+    val (m, _) = model(); m.busy(1f)
+    repeat(200) { m.t += 0.13f; m.tap(Offset(W * ((it * 53) % 100) / 100f, H * ((it * 29) % 100) / 100f)); m.step(0.016f)
+      assertTrue("never over the hard cap", m.liveCount() <= BalloonModel.HARD_CAP) }
   }
 
   @Test fun classicKeepsOnlyWhatYouMake() {
     val (m, s) = model(stream = false); m.busy(30f)
     assertEquals(3, m.liveCount()); assertTrue(s.plays.isEmpty())
-    assertTrue(m.balloons.none { it.kind == BKind.GIANT })
   }
 
-  @Test fun comboClimbsTheScaleAndResetsAfterAPause() {
+  @Test fun quickPopsClimbTheScaleSoftlyAndResetAfterAPause() {
     val (m, s) = model(); m.busy(1f)
     val bs = (0 until 4).map { m.plain(W * (0.2f + it * 0.2f)) }; s.clear()
     bs.forEach { m.t += 0.3f; m.pop(it) }
-    val notes = s.plays.map { it.data }.filter { it in Sfx.comboNotes }
-    assertEquals((0 until 4).map { Sfx.comboNotes[it] }, notes)
+    val notes = s.plays.filter { it.data in Sfx.comboNotes }
+    assertEquals((0 until 4).map { Sfx.comboNotes[it] }, notes.map { it.data })
+    assertTrue("subtle: well under the pop", notes.all { it.gain <= BalloonModel.COMBO_GAIN })
     m.t += 1.3f; s.clear(); m.pop(m.plain())
     assertSame("streak reset", Sfx.comboNotes[0], s.plays[1].data)
     assertEquals(1, m.streak)
   }
 
-  @Test fun fiveInARowGetsOneTaDaNotMore() {
+  @Test fun aLongStreakPlaysOnlyPopsAndNotes() {
     val (m, s) = model(); m.busy(1f)
-    val bs = (0 until 9).map { m.plain(W * (0.1f + it * 0.09f), H * 0.2f) }; s.clear()
-    bs.forEachIndexed { i, b -> m.t += 0.2f; m.pop(b); if (i == 3) assertTrue(s.plays.none { it.data === Sfx.tada }) }
-    assertEquals(1, s.plays.count { it.data === Sfx.tada }); assertEquals(1, m.ribbons.size)
-    assertTrue("no score anywhere", s.plays.all { it.data in Sfx.comboNotes || it.data === Sfx.tada || it.data === Sfx.balloonPop })
+    s.clear()
+    repeat(12) { m.t += 0.2f; m.pop(m.plain(W * (0.05f + it * 0.08f), H * 0.2f)) }
+    assertEquals("one pop + one note each, no jingle", 24, s.plays.size)
+    assertTrue(s.plays.all { it.data in Sfx.comboNotes || it.data === Sfx.balloonPop })
   }
 
   @Test fun everyNoteIsInGMajorPentatonic() {
@@ -100,63 +113,34 @@ class BalloonsTest {
     m.busy(25f); assertTrue("gone eventually", m.parachutes.none { it.critter == b.critter && it.t0 < 2f })
   }
 
-  @Test fun giantBurstsIntoSevenMinisWithAFanfare() {
-    val (m, s) = model(); m.busy(1f)
-    val g = m.make(W / 2, H / 2, kind = BKind.GIANT); s.clear()
-    val minisBefore = m.balloons.count { it.kind == BKind.MINI }
-    m.pop(g); m.busy(0.1f)
-    assertEquals(BalloonModel.MINIS, m.balloons.count { it.kind == BKind.MINI } - minisBefore)
-    assertTrue(s.plays.any { it.data === Sfx.fanfare }); assertTrue(m.shakeUntil > 0f)
-    m.busy(3f); m.balloons.filter { it.kind == BKind.MINI }.forEach { assertTrue("minis settle on screen", it.x in 0f..W && it.y in 0f..H * 1.1f) }
-  }
-
-  @Test fun giantArrivesEvery25To40sOneAtATime() {
-    val (m, _) = model(); val seen = HashSet<Balloon>(); val arrived = ArrayList<Float>()
-    m.busy(130f) {
-      m.balloons.filter { it.kind == BKind.GIANT }.forEach { if (seen.add(it)) arrived += m.t }
-      assertTrue(m.balloons.count { it.kind == BKind.GIANT && !it.leaving } <= 1)
-      m.balloons.firstOrNull { it.kind == BKind.GIANT && it.live && m.t - it.born > 3f }?.let { m.pop(it) }   // pop it once it's up
-    }
-    assertTrue("first after 25-40 s: $arrived", arrived.first() in 25f..40.1f)
-    arrived.zipWithNext { a, b -> assertTrue("gap ${b - a}", b - a in 25f..40.1f) }
-    assertTrue(arrived.size in 3..5)
-    // an unpopped giant isn't joined by a second one
-    val (n, _) = model(seed = 2); n.busy(130f); assertEquals(1, n.balloons.count { it.kind == BKind.GIANT })
-  }
-
-  @Test fun goldenStarSparkles() {
-    val (m, s) = model(); m.busy(1f); val b = m.make(W / 2, H * 0.3f, kind = BKind.GOLDEN); s.clear()
-    m.pop(b); assertTrue(s.plays.any { it.data === Sfx.sparkle })
-  }
-
-  @Test fun surprisesStayRare() {
+  @Test fun animalIsARareTreatOneAtATime() {
     val (m, _) = model(seed = 5); m.busy(2f)
-    var animals = 0; var golden = 0; var total = 0
-    repeat(400) { val b = m.make(W * ((it * 37) % 100) / 100f, H * 0.4f); total++
-      if (b.kind == BKind.ANIMAL) animals++; if (b.kind == BKind.GOLDEN) golden++
-      assertTrue(m.balloons.count { it.live && it.kind == BKind.ANIMAL } <= BalloonModel.MAX_ANIMAL_BALLOONS)
-      assertTrue(m.balloons.count { it.live && it.kind == BKind.GOLDEN } <= 1)
-      if (it % 3 == 0) m.balloons.firstOrNull { it.live }?.let { b2 -> m.pop(b2); m.t += 0.1f; m.step(0.1f) } }
-    assertTrue("animals $animals/$total", animals in 10..80); assertTrue("golden $golden/$total", golden in 2..30)
+    var animals = 0; val total = 3000
+    repeat(total) { val b = m.make(W * ((it * 37) % 100) / 100f, H * 0.4f)
+      if (b.kind == BKind.ANIMAL) { animals++; m.pop(b) }
+      assertTrue(m.balloons.count { it.live && it.kind == BKind.ANIMAL } <= 1)
+      m.balloons.firstOrNull { it.live }?.let { b2 -> m.pop(b2) }; m.t += 0.1f; m.step(0.1f) }
+    val expected = total / BalloonModel.ANIMAL_ODDS.toFloat()
+    assertTrue("animals $animals vs ~$expected", animals in (expected * 0.6f).toInt()..(expected * 1.4f).toInt())
   }
 
-  @Test fun symbolsOffMeansNoSymbols() {
-    val (m, _) = model(symbols = false); m.busy(1f); repeat(50) { m.make(W / 2, H / 2) }
-    assertTrue(m.balloons.all { it.symbol == 0 })
-    val (n, _) = model(symbols = true); n.busy(1f); repeat(80) { n.make(W / 2, H / 2) }
-    assertTrue(n.balloons.any { it.symbol != 0 }); assertTrue("symbols only on round ones", n.balloons.all { it.symbol == 0 || it.kind == BKind.ROUND })
-  }
-
-  @Test fun idleWigglesThenPutsOnAShowThenGoesQuiet() {
+  @Test fun idleWigglesGentlyButNeverPopsByItself() {
     val (m, s) = model(); m.touched(); m.advance(4.9f); assertNull(m.wiggle); assertTrue(s.plays.isEmpty())
     m.advance(0.3f); assertNotNull(m.wiggle); assertEquals(1, s.plays.count { it.data === Sfx.squeak })
-    m.advance(14.5f); val popsBefore = m.pops
-    m.advance(1f); assertEquals("auto-show pops two", popsBefore + 2, m.pops)
-    m.advance(80f)
+    m.advance(120f)
+    assertEquals("nothing pops while nobody touches", 0, m.pops)
     assertEquals("squeaks capped at 3", 3, s.plays.count { it.data === Sfx.squeak })
-    val later = s.plays.size; val p = m.pops; m.advance(60f)
-    assertEquals("after 90 s idle: silent", later, s.plays.size); assertEquals(p, m.pops)
+    val later = s.plays.size; m.advance(60f)
+    assertEquals("after 90 s idle: silent", later, s.plays.size)
     m.tap(Offset(-50f, -50f)); assertNull("touch resets", m.wiggle)
+  }
+
+  @Test fun risersAreSlowAndHover() {
+    val (m, _) = model(); m.busy(1f)
+    val b = m.make(W / 2, H / 2, rising = true, kind = BKind.ROUND)
+    assertTrue("starts below the screen", b.y > H)
+    m.busy(1f); assertTrue("still on its way up after 1 s", b.y > H * 0.6f)
+    m.busy(8f); assertTrue("settled in the sky", b.live && b.y in 0f..H)
   }
 
   @Test fun particlesStayCappedInAStorm() {
@@ -175,6 +159,6 @@ class BalloonsTest {
 
   @Test fun sameSeedSameGame() {
     val (a, _) = model(7); val (b, _) = model(7); a.advance(30f); b.advance(30f)
-    assertEquals(a.balloons.map { Triple(it.kind, it.color, it.label) }, b.balloons.map { Triple(it.kind, it.color, it.label) })
+    assertEquals(a.balloons.map { Triple(it.kind, it.color, it.r) }, b.balloons.map { Triple(it.kind, it.color, it.r) })
   }
 }

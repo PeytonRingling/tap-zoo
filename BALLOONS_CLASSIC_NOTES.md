@@ -29,3 +29,10 @@ above). New: heart, foil-star and animal-face balloons, a squash-then-burst with
 animal parachutes down with its sound, a golden star balloon, a giant rainbow balloon every 25-40 s that bursts into 7 minis, pops in a
 quick run climbing the G-major pentatonic scale (the key of the Balloons music) with a ta-da at 5 in a row, and an idle wiggle + a
 two-balloon auto-show at 20 s that stops after 90 s without a touch. Still no score and nothing to lose.
+
+## Simplified for 18 months (2026-11)
+Peyton found the overhaul busy, so Balloons now keeps only what reads instantly to a toddler: 5-7 big, slow, plain round balloons in
+bright colours (hard cap 10), the cartoon pop with squash-then-burst and confetti, the music, and an animal balloon about 1 in 15
+that parachutes down. Quick pops still climb the scale, but softly (gain 0.15, under the pop). Removed: heart, star and face shapes,
+letters and symbols on balloons (and their parent switch), the golden star, the giant rainbow balloon and its minis, the ta-da, and
+the auto-show; an idle balloon still wiggles at 5 s but nothing pops by itself.

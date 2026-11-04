@@ -2,10 +2,11 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
 android {
   namespace = "com.peyton.toddlergame"
   compileSdk = 34
-  // Release label = versionName ("9" = Tap Zoo v9). Bump with -Pvc/-Pvn (tools/release.sh) and update these defaults in the
-  // same commit. versionCode history: 1 = every build up to v8, 2 = v9 (first build with the GitHub updater).
+  // Release label = versionName ("10" = Tap Zoo v10). Bump with -Pvc/-Pvn (tools/release.sh) and update these defaults in the
+  // same commit. versionCode history: 1 = every build up to v8, 2 = v9 (first build with the GitHub updater), 3 = the local
+  // "10-preview" APK, 4 = v10.
   defaultConfig { applicationId = "com.peyton.toddlergame"; minSdk = 26; targetSdk = 34
-    versionCode = (findProperty("vc") as String?)?.toInt() ?: 2; versionName = (findProperty("vn") as String?) ?: "9" }
+    versionCode = (findProperty("vc") as String?)?.toInt() ?: 4; versionName = (findProperty("vn") as String?) ?: "10" }
   buildFeatures { compose = true }
   composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
   compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
