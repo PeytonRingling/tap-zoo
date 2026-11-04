@@ -41,24 +41,21 @@ class ScreensTest {
   /** Balloons with a scripted model: each step runs [setup] then lets [ms] pass. */
   private fun balloonShot(name: String, vararg steps: Pair<(BalloonModel) -> Unit, Long>) {
     rule.mainClock.autoAdvance = false
-    val m = BalloonModel(FakeSink(), kotlin.random.Random(4), { Sfx.balloonPop }, stream = true, symbols = true)
+    val m = BalloonModel(FakeSink(), kotlin.random.Random(4), { Sfx.balloonPop }, stream = true)
     rule.setContent { Box(Modifier.fillMaxSize()) { BalloonsScreenFor(m) } }
     rule.mainClock.advanceTimeBy(2500)
     for ((setup, ms) in steps) { rule.runOnIdle { m.touched(); setup(m) }; rule.mainClock.advanceTimeBy(ms) }
     rule.onRoot().captureRoboImage("$out/$name.png")
   }
   private val popSome: (BalloonModel) -> Unit = { m -> m.balloons.filter { it.live && it.y < m.h }.take(3).forEach { m.pop(it) } }
-  private val surprises: (BalloonModel) -> Unit = { m ->
-    m.make(m.w * 0.5f, m.h * 0.45f, kind = BKind.GIANT); m.make(m.w * 0.18f, m.h * 0.3f, kind = BKind.GOLDEN); m.make(m.w * 0.82f, m.h * 0.55f, kind = BKind.ANIMAL) }
+  private val animal: (BalloonModel) -> Unit = { m -> m.make(m.w * 0.7f, m.h * 0.5f, kind = BKind.ANIMAL) }
   private val parachute: (BalloonModel) -> Unit = { m -> m.pop(m.make(m.w * 0.3f, m.h * 0.25f, kind = BKind.ANIMAL)) }
-  private val giantBurst: (BalloonModel) -> Unit = { m -> m.balloons.firstOrNull { it.kind == BKind.GIANT && it.live }?.let { m.pop(it) } }
   @Test fun balloonsStart() = balloonShot("22_balloons_start_unfolded", {_: BalloonModel -> } to 10L)
   @Test fun balloonsMidPop() = balloonShot("23_balloons_midpop_unfolded", popSome to 110L)
-  @Test fun balloonsSurprise() = balloonShot("24_balloons_surprises_unfolded", parachute to 1200L, surprises to 600L)
-  @Test fun balloonsGiantBurst() = balloonShot("25_balloons_giant_burst_unfolded", surprises to 600L, giantBurst to 260L)
+  @Test fun balloonsAnimal() = balloonShot("24_balloons_animal_unfolded", parachute to 1200L, animal to 600L)
   @Config(qualifiers = FOLDED) @Test fun balloonsStartFolded() = balloonShot("26_balloons_start_folded", {_: BalloonModel -> } to 10L)
   @Config(qualifiers = FOLDED) @Test fun balloonsMidPopFolded() = balloonShot("27_balloons_midpop_folded", popSome to 110L)
-  @Config(qualifiers = FOLDED) @Test fun balloonsSurpriseFolded() = balloonShot("28_balloons_surprises_folded", parachute to 1200L, surprises to 600L)
+  @Config(qualifiers = FOLDED) @Test fun balloonsAnimalFolded() = balloonShot("28_balloons_animal_folded", parachute to 1200L, animal to 600L)
 
   private val grid = listOf(0.2f to 0.3f, 0.5f to 0.45f, 0.8f to 0.35f, 0.35f to 0.65f, 0.65f to 0.6f)
 

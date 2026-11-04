@@ -82,13 +82,6 @@ object Sfx {
   /** Balloons' combo ladder: G-major pentatonic (G A B D E), the key of "Monkeys Spinning Monkeys", G4 up to E6. */
   val BALLOON_KEY = intArrayOf(67, 69, 71, 74, 76, 79, 81, 83, 86, 88)
   val comboNotes: List<FloatArray> by lazy { BALLOON_KEY.map { xyloAt(midi(it)) } }
-  /** Short "ta-da" in G (G-B-D up, then a G-major chord): five pops in a row. */
-  private fun chord(secs: Double, vararg notes: Int): FloatArray { val r = FloatArray((RATE * secs).toInt()); for (n in notes) { val b = bell(midi(n), secs); for (i in r.indices) r[i] += b[i] / notes.size } ; return r }
-  val tada by lazy { seq(bell(midi(79), 0.09), bell(midi(83), 0.09), bell(midi(86), 0.09), chord(0.6, 91, 86, 83)) }
-  /** Giant rainbow balloon: a rising sweep into a bright G chord. */
-  val fanfare by lazy { seq(tone(392.0, 1568.0, 0.22, harm = 0.3, decay = 0.8, gain = 0.5), chord(0.7, 79, 83, 86, 91)) }
-  /** Golden star: a sparkly upward run in G. */
-  val sparkle by lazy { seq(*listOf(86, 91, 95, 98).map { n -> tone(midi(n), midi(n), 0.07, harm = 0.0, decay = 4.0, gain = 0.5) }.toTypedArray(), bell(midi(103), 0.4)) }
   /** Soft rubbery squeak: an idle balloon wiggling for attention. */
   val squeak by lazy { tone(700.0, 1150.0, 0.16, vib = 60.0, vibRate = 28.0, harm = 0.4, decay = 2.0, gain = 0.5) }
 
@@ -96,7 +89,7 @@ object Sfx {
    *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
   fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
     listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, flutter, zoom, kick, tom, snare, cymbal, march, whoosh) +
-    comboNotes + listOf(tada, fanfare, sparkle, squeak)
+    comboNotes + listOf(squeak)
 }
 
 /** Pure software mixer (no Android types, unit-tested). Voices are capped so chaos stays pleasant; when a new sound would

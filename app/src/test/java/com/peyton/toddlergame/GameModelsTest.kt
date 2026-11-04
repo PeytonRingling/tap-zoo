@@ -16,8 +16,8 @@ class GameModelsTest {
   }
   private fun BalloonModel.advance(secs: Float, dt: Float = 1 / 60f) { var k = 0f; while (k < secs) { t += dt; step(dt); k += dt } }
   private fun BalloonModel.emptySpot(): Offset {
-    for (yy in 2..8) for (xx in 2..8) { val p = Offset(w * xx / 10f, h * yy / 10f)
-      if (balloons.none { kotlin.math.hypot(it.x - p.x, it.y - p.y) < it.r * 2.5f } && bubbles.none { kotlin.math.hypot(it.x - p.x, it.y - p.y) < it.r * 3f }) return p }
+    for (yy in 6..13) for (xx in 4..16) { val p = Offset(w * xx / 20f, h * yy / 20f)   // away from the edges, where big balloons are clamped
+      if (balloons.none { kotlin.math.hypot(it.x - p.x, it.y - p.y) < it.r * 1.6f } && bubbles.none { kotlin.math.hypot(it.x - p.x, it.y - p.y) < it.r * 3f }) return p }
     error("no empty spot")
   }
 
@@ -75,7 +75,7 @@ class GameModelsTest {
 
   @Test fun sameSeedSameGame() {
     val (a, _) = balloons(7); val (b, _) = balloons(7); a.advance(1f); b.advance(1f)
-    assertEquals(a.balloons.map { it.color to it.label }, b.balloons.map { it.color to it.label })
+    assertEquals(a.balloons.map { it.color to it.r }, b.balloons.map { it.color to it.r })
   }
 
   // ---------------------------------------------------------------- Bubbles

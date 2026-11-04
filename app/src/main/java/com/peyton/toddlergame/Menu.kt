@@ -167,7 +167,6 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
   var kl by remember { mutableStateOf(Prefs.kidLock) }
   var vol by remember { mutableIntStateOf(Prefs.volume) }
   var hap by remember { mutableStateOf(Prefs.haptics) }
-  var sym by remember { mutableStateOf(Prefs.balloonSymbols) }
   var bstream by remember { mutableStateOf(Prefs.balloonStream) }
   val time = rememberTicker()
   val label = TextStyle(fontSize = 18.sp, color = Color(0xFF333344), fontWeight = FontWeight.SemiBold)
@@ -219,11 +218,6 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
         BasicText("Balloons keep coming (off = classic: only the ones you make)", style = label, modifier = Modifier.weight(1f, fill = false))
         Box(Modifier.size(64.dp, 36.dp).background(if (bstream) Color(0xFF6BCB77) else Color(0xFFCCCCD6), RoundedCornerShape(18.dp)).clickable { bstream = !bstream; Prefs.balloonStream = bstream },
           contentAlignment = if (bstream) Alignment.CenterEnd else Alignment.CenterStart) { Box(Modifier.padding(4.dp).size(28.dp).background(Color.White, RoundedCornerShape(14.dp))) }
-      }
-      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        BasicText("Shapes & letters on balloons", style = label)
-        Box(Modifier.size(64.dp, 36.dp).background(if (sym) Color(0xFF6BCB77) else Color(0xFFCCCCD6), RoundedCornerShape(18.dp)).clickable { sym = !sym; Prefs.balloonSymbols = sym },
-          contentAlignment = if (sym) Alignment.CenterEnd else Alignment.CenterStart) { Box(Modifier.padding(4.dp).size(28.dp).background(Color.White, RoundedCornerShape(14.dp))) }
       }
       BasicText("Games shown on the menu (tap to hide/show)", style = label)
       Mode.entries.chunked(4).forEach { row ->
