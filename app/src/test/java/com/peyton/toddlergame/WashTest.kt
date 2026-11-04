@@ -43,25 +43,64 @@ class WashTest {
     assertTrue(m.foam.isNotEmpty()); assertEquals(1, s.count(Sfx.plip)); assertEquals(1f, m.dirtLeft(), 0f)
   }
 
-  @Test fun mostlyCleanGetsAShowerThenTheNextMuddyFriendWalksIn() {
-    val (m, s) = model(); val first = m.critter
+  @Test fun cleanThenShowerShakeBlowDryFluffyThenTheNextMuddyFriend() {
+    val (m, s) = model(); val first = m.animal
     m.washClean()
-    assertEquals("tap-only wash works", WashPhase.CLEAN, m.phase); assertEquals(1, m.washed)
-    assertEquals(1, s.count(Sfx.shower)); assertEquals(listOf(first to 300L), s.animals)
-    m.advance(WashModel.CELEBRATE + 0.05f); assertEquals(WashPhase.ENTERING, m.phase)
-    assertNotEquals(first, m.critter); assertEquals("muddy again", 1f, m.dirtLeft(), 0f)
+    assertEquals("tap-only wash works", WashPhase.RINSE, m.phase); assertEquals(1, m.washed); assertEquals(1, s.count(Sfx.shower))
+    m.advance(WashModel.RINSE + 0.02f); assertEquals(WashPhase.SHAKE, m.phase); assertEquals("shake-off splash", 1, s.count(Sfx.splash))
+    assertTrue("droplets fly", m.parts.list.size >= 30)
+    m.advance(WashModel.SHAKE + 0.02f); assertEquals(WashPhase.DRY, m.phase); assertEquals(1, s.count(Sfx.blowDry))
+    m.advance(WashModel.DRY + 0.05f); assertEquals("dries by itself", WashPhase.FLUFFY, m.phase)
+    assertTrue("says hello when fluffy", s.animals.isNotEmpty() || s.count(Sfx.trumpet) + s.count(Sfx.baa) == 1)
+    m.advance(WashModel.FLUFFY + 0.02f); assertEquals(WashPhase.ENTERING, m.phase)
+    assertNotEquals(first, m.animal); assertEquals("muddy again", 1f, m.dirtLeft(), 0f)
     assertTrue("walks in from the right", m.center.x > W * 0.5f)
     m.advance(WashModel.ENTER + 0.05f); assertEquals(WashPhase.DIRTY, m.phase); assertEquals(W * 0.5f, m.center.x, 1f)
   }
 
+  @Test fun rubbingWhileDryingDriesFaster() {
+    val (a, _) = model(); val (b, _) = model()
+    for (m in listOf(a, b)) { m.washClean(); m.advance(WashModel.RINSE + WashModel.SHAKE + 0.05f); assertEquals(WashPhase.DRY, m.phase) }
+    var f = 0L; b.advance(0.5f) { b.down(f, b.center + Offset((f % 3 - 1) * b.radius * 0.4f, 0f)); b.up(f); f++ }; a.advance(0.5f)
+    assertTrue("towel rubs: ${b.phase} ${b.dryness} vs ${a.dryness}", b.phase == WashPhase.FLUFFY || b.dryness > a.dryness + 0.3f)
+  }
+
+  @Test fun pigDogElephantAndFluffySheepAllGetAWashWithTheirOwnVoices() {
+    assertTrue(WashModel.ORDER.containsAll(listOf(WashAnimal.PIG, WashAnimal.DOG, WashAnimal.ELEPHANT, WashAnimal.SHEEP)))
+    val (m, s) = model(); val seen = LinkedHashSet<WashAnimal>()
+    repeat(WashModel.ORDER.size) { seen += m.animal; m.washClean(); m.advance(WashModel.RINSE + WashModel.SHAKE + WashModel.DRY + WashModel.FLUFFY + WashModel.ENTER + 0.3f) }
+    assertEquals(WashModel.ORDER.toSet(), seen)
+    assertEquals("elephant trumpets", 1, s.count(Sfx.trumpet)); assertEquals("sheep baas", 1, s.count(Sfx.baa))
+    assertEquals(WashModel.ORDER.count { it.critter != null }, s.animals.size)
+  }
+
+  @Test fun scrubbingTheBellyGiggles() {
+    val (m, s) = model()
+    m.down(1, m.belly); m.up(1); assertEquals(1, s.count(Sfx.giggle)); assertTrue(m.giggleAt >= 0f)
+    m.t += 0.1f; m.down(2, m.belly); m.up(2); assertEquals("not a giggle storm", 1, s.count(Sfx.giggle))
+    m.t += WashModel.GIGGLE_GAP; m.down(3, m.belly); m.up(3); assertEquals(2, s.count(Sfx.giggle))
+    m.t += WashModel.GIGGLE_GAP; m.down(4, m.center - Offset(0f, m.radius * 0.6f)); m.up(4); assertEquals("forehead isn't the belly", 2, s.count(Sfx.giggle))
+  }
+
+  @Test fun bubblesFloatUpAndPopWhenTapped() {
+    val (m, s) = model(); m.advance(10f) { assertTrue(m.bubbles.size <= WashModel.MAX_BUBBLES) }
+    assertTrue(m.bubbles.isNotEmpty()); assertTrue("big targets", m.bubbleR * 2 >= kotlin.math.min(W, H) * 0.14f)
+    val b = m.bubbles.last(); val y0 = b.y; m.advance(0.5f); assertTrue("floats up", b.y < y0)
+    val dirt = m.dirtLeft(); val n = m.bubbles.size
+    m.down(1, m.bubbleAt(b)); m.up(1)
+    assertFalse(b in m.bubbles); assertEquals(n - 1, m.bubbles.size); assertEquals(1, s.count(Sfx.bubblePop)); assertEquals(1, m.popped)
+    assertEquals("a pop isn't a scrub", dirt, m.dirtLeft(), 0f)
+  }
+
   @Test fun touchesDuringTheCelebrationDontBreakAnything() {
-    val (m, s) = model(); m.washClean(); assertEquals(WashPhase.CLEAN, m.phase)
-    s.clear(); m.t += 0.2f; m.down(5, m.center); m.up(5)
-    assertTrue("still a sound", s.plays.isNotEmpty()); assertEquals(1, m.washed)
+    val (m, s) = model(); m.washClean(); assertEquals(WashPhase.RINSE, m.phase)
+    for (ph in 0 until 4) { s.clear(); m.t += 0.1f; m.down(5, m.center + Offset(m.radius * 0.5f, 0f)); m.up(5)
+      assertTrue("still a sound in ${m.phase}", s.plays.isNotEmpty()); m.advance(1.3f) }
+    assertEquals(1, m.washed)
   }
 
   @Test fun aLongWashScrubsTwiceAsHard() {
-    val (m, _) = model(); m.advance(WashModel.STALL + 1f)
+    val (m, _) = model(); m.advance(WashModel.STALL + 1f); m.bubbles.clear()
     val sp = m.splats[5]; m.down(1, m.splatAt(sp)); assertEquals(WashModel.RUBS - 2, sp.dirt)
   }
 
