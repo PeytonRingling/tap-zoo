@@ -107,6 +107,7 @@ fun App(start: String?, onExit: () -> Unit, onLock: (Boolean) -> Unit = {}) {
         Mode.BUBBLES -> BubblesScreen()
         Mode.PAINT -> PaintScreen()
         Mode.PEEKABOO -> PeekabooScreen()
+        Mode.FIREWORKS -> FireworksScreen()
       }
     }
     if (screen != null && screen != Mode.BEDTIME) ParadeOverlay()
