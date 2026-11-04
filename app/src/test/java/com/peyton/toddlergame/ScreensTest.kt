@@ -90,6 +90,10 @@ class ScreensTest {
   @Test fun wash() { shot("35_wash_unfolded", "WASH", drag = true, after = 300)
     org.junit.Assert.assertTrue("Wash has music, not silent", BgMusic.currentName in setOf("music_bubbles", "music_balloons")) }
   @Config(qualifiers = FOLDED) @Test fun washFolded() = shot("36_wash_folded", "WASH", drag = true, after = 300)
+  /** Stickers: a few taps in, so the page has stickers and the next one glows in the tray. */
+  @Test fun stickers() { shot("37_stickers_unfolded", "STICKERS", listOf(0.2f to 0.25f, 0.5f to 0.2f, 0.8f to 0.3f, 0.35f to 0.55f, 0.65f to 0.5f, 0.5f to 0.4f), after = 600)
+    org.junit.Assert.assertEquals("no music in Stickers", "", BgMusic.currentName) }
+  @Config(qualifiers = FOLDED) @Test fun stickersFolded() = shot("38_stickers_folded", "STICKERS", listOf(0.3f to 0.2f, 0.7f to 0.3f, 0.4f to 0.5f, 0.7f to 0.65f), after = 600)
   @Config(qualifiers = FOLDED) @Test fun fireworksFolded() = shot("32_fireworks_folded", "FIREWORKS", fireTaps, after = 520)
   /** A start name from an older version (a removed mode) opens the menu instead of crashing. */
   @Test fun removedModeNameOpensTheMenu() {
@@ -110,6 +114,8 @@ class ScreensTest {
     rule.onRoot().captureRoboImage("$out/30_bedtime_from_settings.png")
   }
   @Config(qualifiers = FOLDED) @Test fun menuFolded() = shot("15_menu_folded", null)
+  @Config(qualifiers = "w393dp-h851dp-port-xxhdpi") @Test fun menuPhone() = shot("39_menu_phone", null)
+  @Config(qualifiers = "w851dp-h393dp-land-xxhdpi") @Test fun menuPhoneLand() = shot("40_menu_phone_land", null)
   @Config(qualifiers = FOLDED) @Test fun balloonsFolded() = shot("16_balloons_pop_folded", "BALLOONS", grid, after = 140, settle = 4000)
   @Config(qualifiers = FOLDED) @Test fun vehiclesFolded() = shot("17_vehicles_folded", "VEHICLES", settle = 3000)
   @Config(qualifiers = FOLDED) @Test fun aquariumFolded() = shot("18_aquarium_folded", "AQUARIUM")

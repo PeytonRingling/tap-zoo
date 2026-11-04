@@ -41,6 +41,11 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â
   go anywhere hops it in. Burp every 5th bite. Foods always respawn. No music.
 * Wash the animal (`WashModel`, WashTest): rub or tap the mud (3 rubs a splat, twice as hard after 10 s); every touch foams and
   squeaks. At 20% mud left: shower, animal sound, next friend walks in. Music: the `WASH` slot (Beachfront Celebration).
+* Stickers (`StickersModel`, StickersTest): tapping the scene slaps the glowing tray sticker there and the next one glows; drag a
+  tray sticker to peel and place it; tap a placed one for its sound. Max 20 (oldest shrinks away); two fingers held still 2 s clear
+  the page (palms of 3+ fingers don't). No music.
+* Menu layout (`MenuModel.rects`, MenuLayoutTest): 12 tiles must fit phone, phone landscape and both Fold screens, â‰¥ 90 dp each and
+  clear of the parent gear corner.
 * Audio: one output thread at a time (generation counter in `Audio`); the `Mixer` fades a stolen voice over 5 ms instead of cutting it.
 * **Never run the Android emulator.** It crashes the build box. Verify UI with the Robolectric renders.
 * **Signing:** must stay `~/.android/debug.keystore`, cert SHA-256 `65f0d4cb5041d1d60f2fbbb44d0bc73174de9ea1668be0038129630a6a4d113f`.
