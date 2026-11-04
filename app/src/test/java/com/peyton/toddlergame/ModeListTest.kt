@@ -9,14 +9,14 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** The menu after the round-2 cuts: 8 tiles, Bedtime only from Parent settings, and old saved settings never break it. */
+/** The menu after the round-2 cuts: 8 kept tiles plus the new ones, Bedtime only from Parent settings, and old saved settings never break it. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ModeListTest {
   private val c = ApplicationProvider.getApplicationContext<Context>()
 
-  @Test fun eightTilesAndBedtimeIsNotOne() {
-    assertEquals(listOf(Mode.BALLOONS, Mode.ANIMALS, Mode.AQUARIUM, Mode.BUBBLES, Mode.VEHICLES, Mode.DRUMS, Mode.PEEKABOO, Mode.PAINT), Mode.TILES)
+  @Test fun tilesAndBedtimeIsNotOne() {
+    assertEquals(listOf(Mode.BALLOONS, Mode.ANIMALS, Mode.AQUARIUM, Mode.BUBBLES, Mode.VEHICLES, Mode.DRUMS, Mode.PEEKABOO, Mode.PAINT, Mode.FIREWORKS), Mode.TILES)
     assertFalse(Mode.BEDTIME in Mode.TILES)
     assertEquals(Mode.TILES + Mode.BEDTIME, Mode.entries)
   }

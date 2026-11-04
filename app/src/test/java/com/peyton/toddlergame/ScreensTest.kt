@@ -78,6 +78,12 @@ class ScreensTest {
   @Test fun peekaboo() = shot("11_peekaboo_unfolded", "PEEKABOO", listOf(0.25f to 0.7f))
   @Test fun paint() = shot("12_paint_unfolded", "PAINT", drag = true)
   @Test fun bedtime() = shot("21_bedtime_unfolded", "BEDTIME", listOf(0.3f to 0.3f))
+  private val fireTaps = listOf(0.25f to 0.3f, 0.7f to 0.25f, 0.5f to 0.45f, 0.2f to 0.55f, 0.8f to 0.5f)
+  @Test fun fireworks() {
+    shot("31_fireworks_unfolded", "FIREWORKS", fireTaps, after = 520)
+    org.junit.Assert.assertEquals("no music in Fireworks", "", BgMusic.currentName)
+  }
+  @Config(qualifiers = FOLDED) @Test fun fireworksFolded() = shot("32_fireworks_folded", "FIREWORKS", fireTaps, after = 520)
   /** A start name from an older version (a removed mode) opens the menu instead of crashing. */
   @Test fun removedModeNameOpensTheMenu() {
     shot("29_old_start_sky_menu", "SKY")

@@ -79,6 +79,16 @@ object Sfx {
   /** Balloons' combo ladder: G-major pentatonic (G A B D E), the key of "Monkeys Spinning Monkeys", G4 up to E6. */
   val BALLOON_KEY = intArrayOf(67, 69, 71, 74, 76, 79, 81, 83, 86, 88)
   val comboNotes: List<FloatArray> by lazy { BALLOON_KEY.map { xyloAt(midi(it)) } }
+  /** Firework crackle: a scatter of tiny noise ticks that thins out, like sparks fizzling after the boom. */
+  val crackle by lazy {
+    val r = java.util.Random(11); val n = (RATE * 0.9).toInt(); val out = FloatArray(n); var i = (RATE * 0.05).toInt()
+    while (i < n) {
+      val len = (RATE * 0.003).toInt(); val amp = 0.55 * (1 - i.toDouble() / n)
+      for (k in 0 until min(len, n - i)) out[i + k] = ((r.nextDouble() * 2 - 1) * amp * (1 - k.toDouble() / len)).toFloat()
+      i += (RATE * (0.008 + r.nextDouble() * 0.03 * (1 + 2.0 * i / n))).toInt()
+    }
+    out
+  }
   /** Soft rubbery squeak: an idle balloon wiggling for attention. */
   val squeak by lazy { tone(700.0, 1150.0, 0.16, vib = 60.0, vibRate = 28.0, harm = 0.4, decay = 2.0, gain = 0.5) }
 
@@ -86,7 +96,7 @@ object Sfx {
    *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
   fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
     listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, zoom, kick, tom, snare, cymbal, march, whoosh) +
-    comboNotes + listOf(squeak)
+    comboNotes + listOf(squeak, crackle)
 }
 
 /** Pure software mixer (no Android types, unit-tested). Voices are capped so chaos stays pleasant; when a new sound would
