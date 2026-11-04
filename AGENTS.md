@@ -35,6 +35,8 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â
   removed in round 2) and never returns an empty menu (ModeListTest).
 * Fireworks (`FireworksModel`, FireworksTest): any touch launches a rocket under the finger that bursts where it is; holding fires
   every 0.3 s. Caps: 6 rockets (the oldest bursts early), 900 sparks (the oldest drop), whoosh/boom throttled. No music.
+* Feed the monster (`FeedModel`, FeedTest): tap a food, or anywhere (feeds the nearest), and it flies into the mouth; drag and let
+  go anywhere hops it in. Burp every 5th bite. Foods always respawn. No music.
 * Audio: one output thread at a time (generation counter in `Audio`); the `Mixer` fades a stolen voice over 5 ms instead of cutting it.
 * **Never run the Android emulator.** It crashes the build box. Verify UI with the Robolectric renders.
 * **Signing:** must stay `~/.android/debug.keystore`, cert SHA-256 `65f0d4cb5041d1d60f2fbbb44d0bc73174de9ea1668be0038129630a6a4d113f`.
