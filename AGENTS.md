@@ -30,6 +30,9 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â
 * Balloons is tuned for an 18-month-old: plain round balloons only, 5-7 on screen (hard cap 10), an animal balloon about 1 in 15,
   a soft combo note, an idle wiggle at 5 s that never pops anything, quiet after 90 s. `BalloonModel`
   constants are pinned in BalloonsTest; the classic "only what you make" behaviour (`Prefs.balloonStream` off) stays pinned in GameModelsTest.
+* Modes: `Mode` in Common.kt; `Mode.TILES` are the menu tiles. Bedtime has `tile = false` and is started from Parent settings â€º
+  Start bedtime. Saved tile sets go through `enabledFrom`, which drops names from older versions (Garden, Music pads, Night sky were
+  removed in round 2) and never returns an empty menu (ModeListTest).
 * Audio: one output thread at a time (generation counter in `Audio`); the `Mixer` fades a stolen voice over 5 ms instead of cutting it.
 * **Never run the Android emulator.** It crashes the build box. Verify UI with the Robolectric renders.
 * **Signing:** must stay `~/.android/debug.keystore`, cert SHA-256 `65f0d4cb5041d1d60f2fbbb44d0bc73174de9ea1668be0038129630a6a4d113f`.

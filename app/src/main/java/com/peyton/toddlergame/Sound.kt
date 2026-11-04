@@ -34,8 +34,6 @@ object Sfx {
   val PENTA = doubleArrayOf(261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25, 783.99, 880.0)
   val bells: List<FloatArray> by lazy { PENTA.map { bell(it) } }
   fun pop(freq: Double) = mix(tone(freq * 0.6, freq * 1.6, 0.08, harm = 0.1, decay = 4.0), tone(3000.0, 3000.0, 0.015, noise = 0.9, gain = 0.5))
-  fun boing(f: Double) = tone(f * 0.5, f * 1.5, 0.3, vib = 30.0, vibRate = 12.0, decay = 2.5)
-  fun plink(f: Double, gain: Double = 0.6) = tone(f, f * 0.98, 0.15, harm = 0.2, decay = 6.0, gain = gain)
 
   val animal: Map<Critter, FloatArray> by lazy {
     mapOf(
@@ -60,7 +58,6 @@ object Sfx {
   val bubblePop by lazy { tone(900.0, 1600.0, 0.06, harm = 0.0, decay = 6.0, gain = 0.5) }
   val plip by lazy { tone(1200.0, 1800.0, 0.05, harm = 0.0, decay = 4.0, gain = 0.6) }
   val snap by lazy { seq(tone(2500.0, 2500.0, 0.025, noise = 0.9), silence(0.05), tone(2700.0, 2700.0, 0.025, noise = 0.9)) }
-  val flutter by lazy { seq(*listOf(1046.5, 1318.5, 1568.0, 2093.0).map { tone(it, it * 1.02, 0.06, harm = 0.0, decay = 3.0, gain = 0.6) }.toTypedArray()) }
   val zoom by lazy { tone(180.0, 520.0, 0.55, noise = 0.25, harm = 0.8, decay = 1.5, gain = 0.45) }
   private fun horn(a: Double, b: Double, secs: Double) = mix(tone(a, a, secs, harm = 0.9, decay = 0.6, gain = 0.6), tone(b, b, secs, harm = 0.9, decay = 0.6, gain = 0.6))
   /** 0 car beep-beep, 1 bus, 2 truck, 3 train toot */
@@ -88,7 +85,7 @@ object Sfx {
   /** Synthesizes every lazy sound up front (call off the main thread at startup) so the first tap in a mode doesn't stall
    *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
   fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
-    listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, flutter, zoom, kick, tom, snare, cymbal, march, whoosh) +
+    listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, zoom, kick, tom, snare, cymbal, march, whoosh) +
     comboNotes + listOf(squeak)
 }
 
