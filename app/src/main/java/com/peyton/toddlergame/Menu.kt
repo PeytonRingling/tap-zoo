@@ -43,7 +43,7 @@ val MODE_BG = mapOf(Mode.BALLOONS to (Color(0xFFBDE3FF) to Color(0xFFFFE3EF)), M
   Mode.AQUARIUM to (Color(0xFF8FE3FF) to Color(0xFF4E8DF0)), Mode.BUBBLES to (Color(0xFFC8F3FF) to Color(0xFF7FD3F5)),
   Mode.VEHICLES to (Color(0xFFFFF0C9) to Color(0xFFFFD58A)),
   Mode.DRUMS to (Color(0xFFFFE1D2) to Color(0xFFFFB9A0)), Mode.PEEKABOO to (Color(0xFFFFF3CF) to Color(0xFFFFD9A8)),
-  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.FIREWORKS to (Color(0xFF1B2470) to Color(0xFF0A0E33)), Mode.FEED to (Color(0xFFFFF1C9) to Color(0xFFFFC2DA)), Mode.WASH to (Color(0xFFC8EEFF) to Color(0xFF7CCBF5)), Mode.STICKERS to (Color(0xFFE7DDFF) to Color(0xFFFFC6E2)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
+  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.FIREWORKS to (Color(0xFF1B2470) to Color(0xFF0A0E33)), Mode.FEED to (Color(0xFFFFF1C9) to Color(0xFFFFC2DA)), Mode.WASH to (Color(0xFFC8EEFF) to Color(0xFF7CCBF5)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
 
 /** Animated picture icon for each mode (no text). */
 fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f) {
@@ -91,11 +91,6 @@ fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f
         drawRoundRect(Color.White, Offset(rc.left + s * 0.1f, c.y + s * 0.16f), Size(s * 0.8f, s * 0.3f), CornerRadius(s * 0.08f))
         for (i in 0 until 5) drawFoam(Offset(rc.left + s * (0.16f + i * 0.17f), c.y + s * 0.17f + sin(t * 3f + i) * s * 0.01f), s * 0.06f, 1f)
         for (i in 0 until 3) { val b = ((t * 0.4f + i * 0.33f) % 1f); drawFoam(Offset(c.x - s * 0.2f + i * s * 0.2f, c.y + s * 0.1f - b * s * 0.45f), s * 0.035f, 1f - b) } }
-      Mode.STICKERS -> { val k = (t * 0.6f) % 1f
-        drawSticker(StickerKind.STAR, Critter.DOG, Offset(c.x - s * 0.18f, c.y - s * 0.17f), s * 0.17f, t)
-        drawSticker(StickerKind.HEART, Critter.DOG, Offset(c.x + s * 0.2f, c.y - s * 0.12f), s * 0.15f, t)
-        val sc = if (k < 0.25f) 1.35f - k * 1.4f else 1f
-        rotate(-8f, Offset(c.x, c.y + s * 0.18f)) { scale(sc, Offset(c.x, c.y + s * 0.18f)) { drawSticker(StickerKind.ANIMAL, Critter.CAT, Offset(c.x, c.y + s * 0.18f), s * 0.19f, t) } } }
       Mode.BEDTIME -> { for (i in 0 until 6) drawStar(Offset(rc.left + s * ((i * 41 % 100) / 100f), rc.top + s * ((i * 23 % 60) / 100f)), s * 0.018f, Color.White.copy(alpha = 0.4f + 0.3f * sin(t + i)))
         val mc = Offset(rc.left + s * 0.72f, rc.top + s * 0.27f); drawCircle(Color(0xFFFFF1B8), s * 0.13f, mc); drawCircle(MODE_BG.getValue(Mode.BEDTIME).first, s * 0.11f, mc + Offset(s * 0.06f, -s * 0.03f))
         drawCritter(Critter.CAT, Offset(c.x - s * 0.05f, c.y + s * 0.17f), s * 0.2f * (1 + 0.03f * sin(t * 1.5f)), Offset.Zero, 1f, 0f)

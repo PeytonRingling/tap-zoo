@@ -29,19 +29,62 @@ class FireworksTest {
     val (m, s) = model(); val p = Offset(W * 0.5f, H * 0.35f)
     m.down(1, p); m.up(1); m.advance(FireworksModel.FLIGHT + 0.02f)
     assertTrue(m.rockets.isEmpty()); assertTrue(m.sparks.size >= 40)
-    assertEquals(1, s.count(Sfx.boom)); assertEquals(1, s.count(Sfx.crackle))
+    assertEquals("the first burst is a ring: a big boom", 1, s.count(Sfx.bigBoom))
     m.advance(1.2f)
     val far = m.sparks.maxOf { hypot(it.x - p.x, it.y - p.y) } / min(W, H)
     assertTrue("burst radius $far of the short side (about 40% across)", far in 0.15f..0.3f)
     val cx = m.sparks.map { it.x }.average().toFloat(); assertEquals("centred on the finger", p.x, cx, W * 0.03f)
   }
 
-  @Test fun fourShapesAndEightColoursTakeTurns() {
+  @Test fun fourShapesAndEightColoursTakeTurnsWithAFaceEverySixth() {
     val (m, _) = model(); val shapes = ArrayList<BurstShape>(); val colors = HashSet<Any>()
-    repeat(8) { m.down(it.toLong(), Offset(W * (0.1f + it * 0.1f), H * 0.3f)); m.up(it.toLong())
+    repeat(12) { m.down(it.toLong(), Offset(W * (0.1f + (it % 8) * 0.1f), H * 0.3f)); m.up(it.toLong())
       shapes += m.rockets.last().shape; colors += m.rockets.last().color; m.advance(0.5f) }
-    assertEquals(BurstShape.entries + BurstShape.entries, shapes)
+    val R = FireworksModel.ROTATION
+    assertEquals(R + R[0] + BurstShape.SMILEY + R.drop(1) + R.take(2) + BurstShape.CAT, shapes)
     assertEquals(8, colors.size)
+  }
+
+  @Test fun eachShapeHasItsOwnSound() {
+    val (m, s) = model(); val heard = LinkedHashMap<BurstShape, FakeSink.Play?>()
+    repeat(12) { i -> s.clear(); m.down(i.toLong(), Offset(W * (if (i % 2 == 0) 0.2f else 0.8f), H * 0.3f)); m.up(i.toLong())
+      val sh = m.rockets.last().shape; m.advance(1.2f)
+      when (sh) {
+        BurstShape.RING -> assertEquals(1, s.count(Sfx.bigBoom))
+        BurstShape.PEONY -> { assertEquals(1, s.count(Sfx.boom)); assertEquals(1, s.count(Sfx.crackle)) }
+        BurstShape.HEART -> { assertEquals("heart twinkles", 1, s.count(Sfx.twinkle)); assertEquals(0, s.count(Sfx.crackle)) }
+        BurstShape.STAR -> { assertEquals("star crackles", 1, s.count(Sfx.crackle)); assertTrue(s.plays.first { it.data === Sfx.crackle }.gain > 0.5f) }
+        BurstShape.SMILEY -> assertEquals("smiley giggles", 1, s.count(Sfx.giggle))
+        BurstShape.CAT -> assertEquals(listOf(Critter.CAT to 150L), s.animals)
+      }
+      heard[sh] = null }
+    assertEquals(BurstShape.entries.toSet(), heard.keys)
+  }
+
+  @Test fun rapidTapsOnTheSameSpotBuildBiggerBursts() {
+    val (m, _) = model(); val p = Offset(W * 0.5f, H * 0.4f); val powers = ArrayList<Int>()
+    repeat(5) { m.down(it.toLong(), p + Offset(it * 10f, 0f)); m.up(it.toLong()); powers += m.rockets.last().power; m.advance(0.2f) }
+    assertEquals(listOf(0, 1, 2, 3, 3), powers)
+    m.advance(2f); assertTrue(m.sparks.isEmpty())
+    m.down(9, p); assertEquals("a pause resets", 0, m.rockets.last().power)
+    m.t += 0.1f; m.down(10, Offset(W * 0.05f, H * 0.9f)); assertEquals("far away resets", 0, m.rockets.last().power)
+    // a maxed-out burst has 4 layers of sparks and flies wider
+    val (a, _) = model(); val (b, _) = model()
+    a.down(1, p); a.up(1); a.advance(FireworksModel.FLIGHT + 0.02f); val small = a.sparks.size
+    repeat(4) { b.down(it.toLong(), p); b.up(it.toLong()); if (it < 3) b.advance(0.05f) }
+    b.sparks.clear(); b.advance(FireworksModel.FLIGHT + 0.02f)
+    assertTrue("bigger burst: ${b.sparks.size} vs $small", b.sparks.size >= small * 3)
+    assertTrue(b.sparks.size <= FireworksModel.MAX_SPARKS)
+  }
+
+  @Test fun firefliesDriftOnScreenSilentlyAndGlowBetweenTaps() {
+    val (m, s) = model(); m.advance(0.1f)
+    assertEquals(FireworksModel.FIREFLIES, m.fireflies.size)
+    val start = m.fireflies.map { it.x to it.y }
+    m.advance(30f) { m.fireflies.forEach { assertTrue(it.x in 0f..W && it.y in 0f..H) } }
+    assertNotEquals("they drift", start, m.fireflies.map { it.x to it.y })
+    assertEquals(1f, m.fireflyGlow(), 0f); assertTrue(s.plays.isEmpty())
+    m.down(1, Offset(W / 2, H / 2)); m.up(1); assertTrue("dim right after a tap", m.fireflyGlow() < 0.3f)
   }
 
   @Test fun everyShapeIsUnitSizedAndRoundish() {
