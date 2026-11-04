@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -192,7 +193,7 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
   val time = rememberTicker()
   val label = TextStyle(fontSize = 18.sp, color = Color(0xFF333344), fontWeight = FontWeight.SemiBold)
   Box(Modifier.fillMaxSize().background(Color(0xCC101020)).pointerInput(Unit) { detectTapGestures { } }, contentAlignment = Alignment.Center) {
-    Column(Modifier.widthIn(max = 600.dp).padding(28.dp).background(Color.White, RoundedCornerShape(28.dp)).verticalScroll(rememberScrollState()).padding(24.dp),
+    Column(Modifier.widthIn(max = 600.dp).padding(28.dp).background(Color.White, RoundedCornerShape(28.dp)).testTag("settings_panel").verticalScroll(rememberScrollState()).padding(24.dp),
       verticalArrangement = Arrangement.spacedBy(14.dp)) {
       BasicText("Parent settings", style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color(0xFF222233)))
       UpdatesRow(label)
@@ -205,10 +206,12 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
         Box(Modifier.size(64.dp, 36.dp).background(if (hap) Color(0xFF6BCB77) else Color(0xFFCCCCD6), RoundedCornerShape(18.dp)).clickable { hap = !hap; Prefs.haptics = hap; Fx.haptics = hap; Fx.tap() },
           contentAlignment = if (hap) Alignment.CenterEnd else Alignment.CenterStart) { Box(Modifier.padding(4.dp).size(28.dp).background(Color.White, RoundedCornerShape(14.dp))) }
       }
-      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-        BasicText("Music in", style = label)
+      // Wraps onto a second line instead of scrolling sideways, so every switch (Pond is the 5th) is always visible.
+      @OptIn(ExperimentalLayoutApi::class)
+      FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        BasicText("Music in", style = label, modifier = Modifier.align(Alignment.CenterVertically))
         for (sl in MusicSlot.entries) { val on = sl in slots
-          Box(Modifier.background(if (on) Color(0xFF6BCB77) else Color(0xFFE4E2F2), RoundedCornerShape(14.dp))
+          Box(Modifier.testTag("music_chip_${sl.name}").background(if (on) Color(0xFF6BCB77) else Color(0xFFE4E2F2), RoundedCornerShape(14.dp))
             .clickable { slots = if (on) slots - sl else slots + sl; Prefs.musicSlots = slots; onMusicSlots(slots) }.padding(horizontal = 14.dp, vertical = 8.dp)) {
             BasicText((if (on) "♪ " else "") + sl.label, style = label.copy(color = if (on) Color.White else Color(0xFF333344))) }
         }
