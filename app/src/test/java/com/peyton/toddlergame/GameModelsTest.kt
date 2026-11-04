@@ -138,15 +138,4 @@ class GameModelsTest {
     m.up(1); m.t += 4.1f; m.step(0.016f); assertTrue(m.trails.isEmpty())
     m.up(99); m.move(99, Offset(1f, 1f))      // unknown finger: no crash
   }
-
-  // ---------------------------------------------------------------- Music pads
-  @Test fun padsPlayOncePerEntryAndRetriggerOnNewTouch() {
-    val s = FakeSink(); val m = MusicModel(s); m.w = W; m.h = H
-    val r = m.rects()
-    m.press(1, r[2].center, true); assertSame(Sfx.bells[3], s.plays.last().data)
-    m.press(1, r[2].center + Offset(5f, 5f), false); assertEquals(1, s.plays.size)    // sliding inside the same pad
-    m.press(1, r[5].center, false); assertSame(Sfx.bells[6], s.plays.last().data)     // slid onto another pad
-    m.press(2, r[5].center, true); assertEquals(3, s.plays.size)                      // a new touch always plays
-    m.press(3, Offset(-50f, -50f), true); assertEquals(3, s.plays.size)               // outside every pad
-  }
 }

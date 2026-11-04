@@ -97,19 +97,16 @@ fun App(start: String?, onExit: () -> Unit, onLock: (Boolean) -> Unit = {}) {
         (fadeOut(tween(200)) + scaleOut(tween(220), targetScale = 1.06f))
     }, label = "screens") { scr ->
       when (scr) {
-        null -> MenuScreen(Mode.entries.filter { it in enabled }) { screen = it; onLock(true) }
+        null -> MenuScreen(Mode.TILES.filter { it in enabled }) { screen = it; onLock(true) }
         Mode.BALLOONS -> BalloonsScreen()
         Mode.AQUARIUM -> AquariumScreen()
         Mode.VEHICLES -> VehiclesScreen()
-        Mode.GARDEN -> GardenScreen()
         Mode.DRUMS -> DrumsScreen()
         Mode.BEDTIME -> BedtimeScreen()
         Mode.ANIMALS -> AnimalsScreen()
         Mode.BUBBLES -> BubblesScreen()
         Mode.PAINT -> PaintScreen()
-        Mode.MUSIC -> MusicScreen()
         Mode.PEEKABOO -> PeekabooScreen()
-        Mode.SKY -> SkyScreen()
       }
     }
     if (screen != null && screen != Mode.BEDTIME) ParadeOverlay()
@@ -120,6 +117,7 @@ fun App(start: String?, onExit: () -> Unit, onLock: (Boolean) -> Unit = {}) {
     if (settings) SettingsPanel(enabled, onToggle = { mo ->
       val n = if (mo in enabled) enabled - mo else enabled + mo
       if (n.isNotEmpty()) { enabled = n; Prefs.enabled = n }
-    }, onClose = { settings = false; onLock(true) }, onExit = onExit, onKidLock = { on -> Prefs.kidLock = on; onLock(on) }, onMusicSlots = { musicSlots = it }, onMusicVolume = { musicVol = it })
+    }, onClose = { settings = false; onLock(true) }, onExit = onExit, onKidLock = { on -> Prefs.kidLock = on; onLock(on) }, onMusicSlots = { musicSlots = it }, onMusicVolume = { musicVol = it },
+      onBedtime = { settings = false; screen = Mode.BEDTIME; onLock(true) })
   }
 }

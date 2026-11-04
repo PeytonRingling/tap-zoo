@@ -6,6 +6,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -65,7 +68,6 @@ class ScreensTest {
   @Test fun balloonsPop() = shot("04_balloons_pop_unfolded", "BALLOONS", grid, after = 140, settle = 4000)
   @Test fun aquarium() = shot("05_aquarium_unfolded", "AQUARIUM", listOf(0.5f to 0.4f))
   @Test fun vehicles() = shot("06_vehicles_unfolded", "VEHICLES", settle = 3000)
-  @Test fun garden() = shot("07_garden_unfolded", "GARDEN")
   @Test fun drums() = shot("08_drums_unfolded", "DRUMS", listOf(0.3f to 0.3f, 0.6f to 0.8f))
   @Test fun animals() = shot("09_animals_unfolded", "ANIMALS", listOf(0.5f to 0.3f))
   @Test fun bubbles() {
@@ -75,14 +77,29 @@ class ScreensTest {
   }
   @Test fun peekaboo() = shot("11_peekaboo_unfolded", "PEEKABOO", listOf(0.25f to 0.7f))
   @Test fun paint() = shot("12_paint_unfolded", "PAINT", drag = true)
-  @Test fun music() = shot("13_music_unfolded", "MUSIC", listOf(0.2f to 0.3f))
-  @Test fun sky() = shot("14_sky_unfolded", "SKY", listOf(0.5f to 0.3f))
   @Test fun bedtime() = shot("21_bedtime_unfolded", "BEDTIME", listOf(0.3f to 0.3f))
+  /** A start name from an older version (a removed mode) opens the menu instead of crashing. */
+  @Test fun removedModeNameOpensTheMenu() {
+    shot("29_old_start_sky_menu", "SKY")
+    org.junit.Assert.assertEquals("music_menu", BgMusic.currentName)
+  }
+  /** Bedtime isn't a menu tile any more: a parent starts it from Parent settings. */
+  @Test fun startBedtimeFromParentSettings() {
+    rule.mainClock.autoAdvance = false
+    rule.setContent { Box(Modifier.fillMaxSize()) { App("SETTINGS", onExit = {}) } }
+    rule.mainClock.advanceTimeBy(1000)
+    rule.onNodeWithText("Start bedtime").performScrollTo()
+    rule.mainClock.advanceTimeBy(500)
+    rule.onNodeWithText("Start bedtime").performClick()
+    rule.mainClock.advanceTimeBy(1500)
+    rule.onNodeWithText("Start bedtime").assertDoesNotExist()
+    org.junit.Assert.assertEquals("music_lullaby", BgMusic.currentName)
+    rule.onRoot().captureRoboImage("$out/30_bedtime_from_settings.png")
+  }
   @Config(qualifiers = FOLDED) @Test fun menuFolded() = shot("15_menu_folded", null)
   @Config(qualifiers = FOLDED) @Test fun balloonsFolded() = shot("16_balloons_pop_folded", "BALLOONS", grid, after = 140, settle = 4000)
   @Config(qualifiers = FOLDED) @Test fun vehiclesFolded() = shot("17_vehicles_folded", "VEHICLES", settle = 3000)
   @Config(qualifiers = FOLDED) @Test fun aquariumFolded() = shot("18_aquarium_folded", "AQUARIUM")
-  @Config(qualifiers = FOLDED) @Test fun gardenFolded() = shot("19_garden_folded", "GARDEN")
   @Config(qualifiers = FOLDED) @Test fun drumsFolded() = shot("20_drums_folded", "DRUMS")
 
   // ---- App updates row in Parent settings (behind the 3 s gear hold); one render per state

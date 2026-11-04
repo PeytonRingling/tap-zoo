@@ -41,9 +41,9 @@ import kotlin.random.Random
 
 val MODE_BG = mapOf(Mode.BALLOONS to (Color(0xFFBDE3FF) to Color(0xFFFFE3EF)), Mode.ANIMALS to (Color(0xFFD7F5C8) to Color(0xFFA8E39A)),
   Mode.AQUARIUM to (Color(0xFF8FE3FF) to Color(0xFF4E8DF0)), Mode.BUBBLES to (Color(0xFFC8F3FF) to Color(0xFF7FD3F5)),
-  Mode.VEHICLES to (Color(0xFFFFF0C9) to Color(0xFFFFD58A)), Mode.GARDEN to (Color(0xFFFFE3F1) to Color(0xFFC9EDB9)),
+  Mode.VEHICLES to (Color(0xFFFFF0C9) to Color(0xFFFFD58A)),
   Mode.DRUMS to (Color(0xFFFFE1D2) to Color(0xFFFFB9A0)), Mode.PEEKABOO to (Color(0xFFFFF3CF) to Color(0xFFFFD9A8)),
-  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.MUSIC to (Color(0xFFF3E1FF) to Color(0xFFD6BCFF)), Mode.SKY to (Color(0xFF34408F) to Color(0xFF151B4D)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
+  Mode.PAINT to (Color(0xFF3B2A7A) to Color(0xFF1A1345)), Mode.BEDTIME to (Color(0xFF2B2E6E) to Color(0xFF12143A)))
 
 /** Animated picture icon for each mode (no text). */
 fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f) {
@@ -66,15 +66,10 @@ fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f
       Mode.VEHICLES -> { drawRoundRect(Color(0xFF8E8AAE), Offset(rc.left, c.y + s * 0.18f), Size(rc.width, s * 0.14f))
         var x = rc.left - (t * s * 0.3f) % (s * 0.25f); while (x < rc.right) { drawRect(Color.White.copy(alpha = 0.8f), Offset(x, c.y + s * 0.245f), Size(s * 0.1f, s * 0.015f)); x += s * 0.25f }
         drawVehicle(0, c.x - s * 0.3f, c.y + s * 0.2f - abs(sin(t * 8f)) * s * 0.01f, s * 0.4f, Pal.coral, t, t * 300f) }
-      Mode.GARDEN -> { drawFlower(Offset(c.x - s * 0.12f, rc.bottom + s * 0.02f), s * 0.5f, s * 0.12f, Pal.pink, sin(t) * 0.4f, 0f)
-        drawButterfly(c + Offset(s * 0.18f + sin(t * 0.9f) * s * 0.06f, -s * 0.18f + cos(t * 1.3f) * s * 0.05f), s * 0.11f, Pal.sky, sin(t * 10f)) }
       Mode.DRUMS -> { for (i in 0 until 4) { val bh = s * (0.4f - i * 0.05f); val bx = rc.left + s * (0.16f + i * 0.18f); val hit = ((t * 3f).toInt() % 4 == i)
           clayRect(Rect(bx, c.y - s * 0.12f - bh / 2, bx + s * 0.13f, c.y - s * 0.12f + bh / 2), s * 0.05f, RAINBOW[i * 2].lighten(if (hit) 0.25f else 0f), 0.6f) }
         val dc = Offset(c.x, c.y + s * 0.3f); drawRoundRect(Brush.horizontalGradient(listOf(Pal.coral.darken(0.1f), Pal.coral.lighten(0.25f), Pal.coral.darken(0.15f)), dc.x - s * 0.25f, dc.x + s * 0.25f), Offset(dc.x - s * 0.25f, dc.y - s * 0.05f), Size(s * 0.5f, s * 0.2f), CornerRadius(s * 0.05f))
         drawOval(Color(0xFFFFFBF2), Offset(dc.x - s * 0.25f, dc.y - s * 0.12f), Size(s * 0.5f, s * 0.14f)) }
-      Mode.MUSIC -> { val on = ((t * 3f).toInt()) % 4; for (i in 0 until 4) { val x = rc.left + s * (0.14f + (i % 2) * 0.38f); val y = rc.top + s * (0.14f + (i / 2) * 0.38f)
-          val sc = if (i == on) 1.08f else 1f; scale(sc, sc, Offset(x + s * 0.17f, y + s * 0.17f)) { clayRect(Rect(x, y, x + s * 0.34f, y + s * 0.34f), s * 0.08f, RAINBOW[i * 2], 0.5f)
-          drawShape(i, Offset(x + s * 0.17f, y + s * 0.17f), s * 0.075f, Color.White.copy(alpha = if (i == on) 1f else 0.8f)) } } }
       Mode.PAINT -> { var prev: Offset? = null; for (j in 0..40) { val x = rc.left + s * (0.12f + 0.76f * j / 40f); val p = Offset(x, c.y + sin(j * 0.35f + t * 3f) * s * 0.18f)
           prev?.let { drawLine(Color.hsv((j * 9f + t * 80f) % 360f, 0.8f, 1f).copy(alpha = 0.35f), it, p, s * 0.09f, StrokeCap.Round); drawLine(Color.hsv((j * 9f + t * 80f) % 360f, 0.5f, 1f), it, p, s * 0.035f, StrokeCap.Round) }; prev = p }
         drawStar(Offset(rc.left + s * 0.88f, c.y + sin(40 * 0.35f + t * 3f) * s * 0.18f), s * 0.06f * (1 + 0.3f * sin(t * 8f)), Color.White) }
@@ -85,10 +80,6 @@ fun DrawScope.drawModeIcon(mode: Mode, rc: Rect, t: Float, elevation: Float = 1f
         val mc = Offset(rc.left + s * 0.72f, rc.top + s * 0.27f); drawCircle(Color(0xFFFFF1B8), s * 0.13f, mc); drawCircle(MODE_BG.getValue(Mode.BEDTIME).first, s * 0.11f, mc + Offset(s * 0.06f, -s * 0.03f))
         drawCritter(Critter.CAT, Offset(c.x - s * 0.05f, c.y + s * 0.17f), s * 0.2f * (1 + 0.03f * sin(t * 1.5f)), Offset.Zero, 1f, 0f)
         val zt = (t * 0.4f) % 1f; drawStar(Offset(c.x + s * 0.15f + zt * s * 0.05f, c.y - zt * s * 0.15f), s * 0.035f, Color.White.copy(alpha = 1 - zt)) }
-      Mode.SKY -> { for (i in 0 until 8) drawStar(Offset(rc.left + s * ((i * 37 % 100) / 100f), rc.top + s * ((i * 61 % 100) / 100f)), s * 0.02f, Color.White.copy(alpha = 0.5f + 0.5f * sin(t * 3 + i)))
-        drawCircle(Color(0xFFFFF1A8), s * 0.12f, Offset(rc.left + s * 0.75f, rc.top + s * 0.25f))
-        val bx = rc.left + s * (0.5f + 0.3f * sin(t * 1.3f)); val by = rc.bottom - s * 0.17f - abs(sin(t * 3f)) * s * 0.35f
-        rotate(t * 200f, Offset(bx, by)) { drawStar(Offset(bx, by), s * 0.13f, Pal.sun) } }
     }
   }
   drawRoundRect(Color.White.copy(alpha = 0.7f), rc.topLeft, rc.size, CornerRadius(rad), style = Stroke(rc.minDimension * 0.02f))
@@ -158,7 +149,7 @@ fun MenuScreen(modes: List<Mode>, onPick: (Mode) -> Unit) {
 
 @Composable
 fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> Unit, onExit: () -> Unit, onKidLock: (Boolean) -> Unit = {},
-                  onMusicSlots: (Set<MusicSlot>) -> Unit = {}, onMusicVolume: (Int) -> Unit = {}) {
+                  onMusicSlots: (Set<MusicSlot>) -> Unit = {}, onMusicVolume: (Int) -> Unit = {}, onBedtime: () -> Unit = {}) {
   var slots by remember { mutableStateOf(Prefs.musicSlots) }
   var mvol by remember { mutableIntStateOf(Prefs.musicVolume) }
   var bed by remember { mutableIntStateOf(Prefs.bedtimeMinutes) }
@@ -192,6 +183,12 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
             BasicText((if (on) "♪ " else "") + sl.label, style = label.copy(color = if (on) Color.White else Color(0xFF333344))) }
         }
       }
+      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Canvas(Modifier.size(64.dp).clickable { onBedtime() }) { drawModeIcon(Mode.BEDTIME, Rect(Offset.Zero, size), time.value, 0f) }
+        Box(Modifier.background(Color(0xFF5B5A9C), RoundedCornerShape(16.dp)).clickable { onBedtime() }.padding(horizontal = 22.dp, vertical = 14.dp)) {
+          BasicText("Start bedtime", style = label.copy(color = Color.White)) }
+        BasicText("Calm night scene with a lullaby; the screen dims when the timer ends.", style = TextStyle(fontSize = 14.sp, color = Color(0xFF666677)), modifier = Modifier.weight(1f, fill = false))
+      }
       Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         BasicText("Bedtime timer", style = label)
         for (mn in listOf(10, 15, 20)) Box(Modifier.background(if (bed == mn) Color(0xFF5B5A9C) else Color(0xFFE4E2F2), RoundedCornerShape(14.dp)).clickable { bed = mn; Prefs.bedtimeMinutes = mn }.padding(horizontal = 14.dp, vertical = 8.dp)) {
@@ -220,7 +217,7 @@ fun SettingsPanel(enabled: Set<Mode>, onToggle: (Mode) -> Unit, onClose: () -> U
           contentAlignment = if (bstream) Alignment.CenterEnd else Alignment.CenterStart) { Box(Modifier.padding(4.dp).size(28.dp).background(Color.White, RoundedCornerShape(14.dp))) }
       }
       BasicText("Games shown on the menu (tap to hide/show)", style = label)
-      Mode.entries.chunked(4).forEach { row ->
+      Mode.TILES.chunked(4).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
           row.forEach { mode -> val on = mode in enabled
             Canvas(Modifier.size(80.dp).clickable { onToggle(mode) }) {

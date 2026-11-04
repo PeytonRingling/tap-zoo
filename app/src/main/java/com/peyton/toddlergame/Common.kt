@@ -30,7 +30,11 @@ import kotlin.random.Random
 
 val RAINBOW = listOf(0xFFFF6B6B, 0xFFFF9F43, 0xFFFFD43B, 0xFF94D82D, 0xFF38D9A9, 0xFF4CC9F0, 0xFF5B7CFA, 0xFF9B5DE5).map { Color(it) }
 
-enum class Mode { BALLOONS, ANIMALS, AQUARIUM, BUBBLES, VEHICLES, GARDEN, DRUMS, PEEKABOO, PAINT, MUSIC, SKY, BEDTIME }
+/** Every screen a child can be in. [tile] = shown on the menu; Bedtime is started by a parent from Parent settings instead. */
+enum class Mode(val tile: Boolean = true) {
+  BALLOONS, ANIMALS, AQUARIUM, BUBBLES, VEHICLES, DRUMS, PEEKABOO, PAINT, BEDTIME(tile = false);
+  companion object { val TILES = entries.filter { it.tile } }
+}
 
 object Prefs {
   private var sp: android.content.SharedPreferences? = null
@@ -41,8 +45,10 @@ object Prefs {
   }
   var volume: Int get() = sp?.getInt("vol", 4) ?: 4; set(v) { sp?.edit()?.putInt("vol", v)?.apply() }
   var haptics: Boolean get() = sp?.getBoolean("hap", true) ?: true; set(v) { sp?.edit()?.putBoolean("hap", v)?.apply() }
+  /** Menu tiles a parent left on. Names saved by older versions (Garden, Music pads, Night sky, Bedtime) are dropped; if nothing
+   *  is left, every tile shows, so the menu is never empty. */
   var enabled: Set<Mode>
-    get() = sp?.getStringSet("modes", null)?.mapNotNull { runCatching { Mode.valueOf(it) }.getOrNull() }?.toSet()?.ifEmpty { null } ?: Mode.entries.toSet()
+    get() = enabledFrom(sp?.getStringSet("modes", null))
     set(v) { sp?.edit()?.putStringSet("modes", v.map { it.name }.toSet())?.apply() }
   /** Where music plays. First read migrates the old `mmus`/`bmus` switches (see [MusicDirector.migrate]); they're no longer written. */
   var musicSlots: Set<MusicSlot>
@@ -58,6 +64,10 @@ object Prefs {
   var balloonStream: Boolean get() = sp?.getBoolean("bstream", true) ?: true; set(v) { sp?.edit()?.putBoolean("bstream", v)?.apply() }
   fun volumeGain(v: Int) = v / 5f
 }
+
+/** Parses saved menu tiles: unknown or non-tile names are ignored, and an empty result means "all tiles". */
+fun enabledFrom(stored: Set<String>?): Set<Mode> =
+  stored?.mapNotNull { n -> Mode.entries.firstOrNull { it.name == n && it.tile } }?.toSet()?.ifEmpty { null } ?: Mode.TILES.toSet()
 
 object Fx {
   var vib: Vibrator? = null
