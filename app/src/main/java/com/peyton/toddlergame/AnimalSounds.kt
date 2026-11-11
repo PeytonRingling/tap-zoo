@@ -14,14 +14,17 @@ object AnimalSounds {
   private val ids = HashMap<Critter, Int>(); private val ready = HashSet<Int>()
   private val main by lazy { Handler(Looper.getMainLooper()) }
   private var lastPlay = 0L
-  private val names = mapOf(Critter.DOG to "animal_dog", Critter.CAT to "animal_cat", Critter.PIG to "animal_pig", Critter.COW to "animal_cow",
+  /** The pig has no clip on purpose: the generated `animal_pig` clip is a run of high (~500 Hz) tonal squeals that don't read as
+   *  a pig, so it always uses the synthesized oink-oink ([Sfx.oinkOink]) instead. */
+  internal val SYNTH_ONLY = setOf(Critter.PIG)
+  private val names = mapOf(Critter.DOG to "animal_dog", Critter.CAT to "animal_cat", Critter.COW to "animal_cow",
     Critter.FROG to "animal_frog", Critter.LION to "animal_lion", Critter.CHICK to "animal_chick", Critter.DUCK to "animal_duck")
 
   /** Raw resource id for [name], or 0 if this build doesn't include it (public clone without the sounds submodule). */
   @android.annotation.SuppressLint("DiscouragedApi")
   private fun rawId(c: Context, name: String): Int = c.resources.getIdentifier(name, "raw", c.packageName)
 
-  /** How many of the 8 animal clips this build contains: 8 with the sounds submodule, 0 without. */
+  /** How many animal clips this build uses: 7 with the sounds submodule (all but [SYNTH_ONLY]), 0 without. */
   internal fun available(c: Context): Int = names.values.count { rawId(c, it) != 0 }
 
   fun init(c: Context) {
