@@ -106,6 +106,28 @@ class FireworksTest {
     m.up(7); val n = m.rockets.size; m.advance(1f); assertTrue(m.rockets.isEmpty()); assertTrue(n <= FireworksModel.MAX_ROCKETS)
   }
 
+  @Test fun aFingerStuckDownStopsFiringAfterAFew() {
+    // e.g. a lost release or a palm/case edge resting on the glass: it used to fire every 0.3 s forever
+    val (m, s) = model(); for (id in 1L..5L) m.down(id, Offset(W * 0.15f * id, H * 0.4f))
+    m.advance(60f)
+    assertEquals("5 taps + ${FireworksModel.HOLD_MAX} repeats each", 5 * (1 + FireworksModel.HOLD_MAX), s.haptics.count { !it })
+    assertEquals(0, m.autoFiring()); assertTrue(m.rockets.isEmpty())
+    val n = s.plays.size; m.advance(30f); assertEquals("silent sky", n, s.plays.size)
+    m.up(1); m.down(1, Offset(W / 2, H / 2)); assertEquals("a new touch fires again", 1, m.rockets.size)
+  }
+
+  @Test fun releasedOrCancelledFingersNeverFireAgain() {
+    val (m, s) = model(); val f = FingerTracker(onDown = m::down, onMove = m::move, onUp = m::up)
+    f.event(listOf(FingerChange(1, Offset(W / 3, H / 3), true, false, false), FingerChange(2, Offset(W / 2, H / 3), true, false, false)))
+    m.advance(0.4f); f.releaseAll()   // gesture cancelled (system swipe, app paused)
+    assertEquals(0, m.holding()); val n = s.haptics.count { !it }; m.advance(10f); assertEquals(n, s.haptics.count { !it })
+  }
+
+  @Test fun rocketsInFlightAreCappedEvenWithEveryFingerHeld() {
+    val (m, _) = model(); for (id in 0L until 5L) m.down(id, Offset(W * 0.2f * id, H * 0.4f))
+    m.advance(5f, dt = 1 / 30f) { assertTrue(m.rockets.size <= FireworksModel.MAX_ROCKETS) }
+  }
+
   @Test fun palmSmackIsSafe() {
     val (m, s) = model()
     m.advance(5f) { if ((m.t * 60).toInt() % 3 == 0) for (f in 0L until 5L) { m.up(f); m.down(f, Offset(W * (0.2f + f * 0.15f), H * 0.5f)) }

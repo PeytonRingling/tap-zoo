@@ -39,7 +39,7 @@ object Sfx {
     mapOf(
       Critter.DOG to seq(tone(330.0, 240.0, 0.13, harm = 0.9, noise = 0.25, decay = 2.0), silence(0.06), tone(350.0, 250.0, 0.15, harm = 0.9, noise = 0.25, decay = 2.0)),
       Critter.CAT to seq(tone(450.0, 760.0, 0.2, vib = 15.0, harm = 0.5, decay = 0.3), tone(760.0, 470.0, 0.35, vib = 20.0, harm = 0.5, decay = 2.0)),
-      Critter.PIG to seq(tone(260.0, 300.0, 0.12, harm = 1.0, noise = 0.3, vib = 30.0, vibRate = 40.0), silence(0.05), tone(280.0, 320.0, 0.14, harm = 1.0, noise = 0.3, vib = 30.0, vibRate = 40.0)),
+      Critter.PIG to oinkOink,
       Critter.COW to tone(190.0, 150.0, 0.9, vib = 8.0, vibRate = 4.0, harm = 1.0, decay = 1.2),
       Critter.FROG to seq(tone(180.0, 220.0, 0.09, harm = 1.0, vib = 60.0, vibRate = 45.0), silence(0.04), tone(200.0, 260.0, 0.14, harm = 1.0, vib = 60.0, vibRate = 45.0)),
       Critter.LION to tone(150.0, 115.0, 0.7, vib = 20.0, vibRate = 25.0, harm = 1.0, noise = 0.35, decay = 1.5),
@@ -47,6 +47,35 @@ object Sfx {
       Critter.CHICK to seq(tone(1800.0, 2400.0, 0.07, decay = 1.0), silence(0.04), tone(1900.0, 2500.0, 0.07), silence(0.04), tone(2000.0, 2600.0, 0.08)),
     )
   }
+  /** Cartoon pig: two quick nasal "oink"s. A low buzzy pulse train (about 150 Hz gliding down to 105) plus breath noise, through
+   *  a nasal formant bank, with a fast rough flutter (snort) and a squeezed start, so it grunts instead of whistling. */
+  internal fun oink(f0: Double, f1: Double, secs: Double, seed: Long): FloatArray {
+    val n = (RATE * secs).toInt(); val src = DoubleArray(n); val r = java.util.Random(seed); var ph = 0.0
+    for (i in 0 until n) { val x = i.toDouble() / n; val f = f0 * (f1 / f0).pow(x); ph += f / RATE; if (ph >= 1) ph -= 1.0
+      val pulse = if (ph < 0.12) sin(PI * ph / 0.12) else 0.0   // narrow glottal pulse: rich, buzzy harmonics
+      src[i] = pulse * 0.9 + (r.nextDouble() * 2 - 1) * 0.35 }
+    // nasal formants (Hz, bandwidth Hz, gain): a strong low "nn" hum, an "oi" vowel, and a little nasal edge up top
+    val out = DoubleArray(n)
+    for ((fc, bw, g) in listOf(Triple(320.0, 90.0, 1.0), Triple(900.0, 160.0, 0.75), Triple(2300.0, 260.0, 0.3))) {
+      val rr = exp(-PI * bw / RATE); val c = 2 * rr * cos(2 * PI * fc / RATE); var y1 = 0.0; var y2 = 0.0
+      for (i in 0 until n) { val y = (1 - rr) * src[i] + c * y1 - rr * rr * y2; y2 = y1; y1 = y; out[i] += y * g }
+    }
+    val peak = out.maxOf { abs(it) }.coerceAtLeast(1e-9)
+    return FloatArray(n) { i -> val t = i.toDouble() / RATE; val x = i.toDouble() / n
+      val env = min(1.0, t / 0.012) * (if (x > 0.7) (1 - x) / 0.3 else 1.0) * (0.75 + 0.25 * sin(PI * min(1.0, x * 2)))
+      val rough = 0.62 + 0.38 * sin(2 * PI * 32 * t)   // the snorty flutter
+      (out[i] / peak * env * rough).toFloat() }
+  }
+  /** Sample RMS that makes a synth voice (played at 0.7 × gain) about as loud as the animal clips (about -18 dBFS RMS). */
+  const val ANIMAL_RMS = 0.18
+  /** "Oink-oink!", loudness-matched to the other animals' clips, peak kept under full scale. */
+  val oinkOink: FloatArray by lazy {
+    val raw = seq(oink(155.0, 112.0, 0.17, 3), silence(0.07), oink(165.0, 105.0, 0.21, 4))
+    val k = (ANIMAL_RMS / rms(raw)).coerceAtMost(0.98 / raw.maxOf { abs(it) })
+    FloatArray(raw.size) { (raw[it] * k).toFloat() }
+  }
+  internal fun rms(a: FloatArray) = sqrt(a.sumOf { it.toDouble() * it } / a.size.coerceAtLeast(1))
+
   val peekaboo by lazy { seq(tone(1046.5, 1046.5, 0.14, decay = 1.5), tone(1318.5, 1318.5, 0.14, decay = 1.5), tone(784.0, 1568.0, 0.45, vib = 25.0, decay = 1.2)) }
   val giggle by lazy { seq(*(0 until 5).flatMap { listOf(tone(700.0 + it * 80, 900.0 + it * 80, 0.07, decay = 2.0), silence(0.03)) }.toTypedArray()) }
   val chime by lazy { seq(bell(783.99, 0.18), bell(1046.5, 0.5)) }

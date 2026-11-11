@@ -20,8 +20,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.dp
@@ -82,7 +80,6 @@ object Fx {
   var vib: Vibrator? = null
   var haptics = true
   fun tap(strong: Boolean = false) {
-    Parade.onTap()
     if (!haptics) return
     val v = vib ?: return
     try {
@@ -107,24 +104,43 @@ fun rememberTicker(step: (dt: Float, t: Float) -> Unit = { _, _ -> }): State<Flo
   return time
 }
 
-/** Raw multi-touch: every finger handled independently; extra fingers beyond 5 ignored. */
+/** Raw multi-touch: every finger handled independently; extra fingers beyond 5 ignored. Each finger-down also counts toward
+ *  the [Parade]. Every finger that got [onDown] is guaranteed an [onUp], even if its release is missed or the gesture is cancelled
+ *  (system gesture, app paused, screen left): see [FingerTracker]. */
 fun Modifier.multiTouch(key: Any?, onDown: (Long, Offset) -> Unit, onMove: (Long, Offset) -> Unit = { _, _ -> }, onUp: (Long) -> Unit = {}) =
   pointerInput(key) {
-    awaitPointerEventScope {
-      while (true) {
-        val e = awaitPointerEvent()
-        val pressed = e.changes.count { it.pressed }
-        for (ch in e.changes) {
-          when {
-            ch.changedToDown() -> if (pressed <= 5) onDown(ch.id.value, ch.position)
-            ch.changedToUp() -> onUp(ch.id.value)
-            ch.pressed && ch.positionChanged() -> onMove(ch.id.value, ch.position)
-          }
-          ch.consume()
+    val fingers = FingerTracker(onDown = { id, p -> Parade.onFingerDown(); onDown(id, p) }, onMove = onMove, onUp = onUp)
+    try {
+      awaitPointerEventScope {
+        while (true) {
+          val e = awaitPointerEvent()
+          fingers.event(e.changes.map { FingerChange(it.id.value, it.position, it.pressed, it.previousPressed, it.positionChanged()) })
+          e.changes.forEach { it.consume() }
         }
       }
-    }
+    } finally { fingers.releaseAll() }
   }
+
+internal class FingerChange(val id: Long, val p: Offset, val pressed: Boolean, val wasPressed: Boolean, val moved: Boolean)
+
+/** Turns pointer changes into down/move/up per finger (pure, unit-tested). A finger it reported down is reported up when it is
+ *  released, when an event no longer lists it as pressed, or on [releaseAll] — so a lost release can't leave a finger "held". */
+internal class FingerTracker(private val onDown: (Long, Offset) -> Unit, private val onMove: (Long, Offset) -> Unit, private val onUp: (Long) -> Unit,
+                             private val maxFingers: Int = 5) {
+  private val down = LinkedHashSet<Long>()
+  fun held(): Set<Long> = down
+  fun event(changes: List<FingerChange>) {
+    val pressed = changes.count { it.pressed }
+    for (ch in changes) when {
+      ch.pressed && !ch.wasPressed -> if (pressed <= maxFingers && down.add(ch.id)) onDown(ch.id, ch.p)
+      !ch.pressed -> if (down.remove(ch.id)) onUp(ch.id)
+      ch.moved && ch.id in down -> onMove(ch.id, ch.p)
+    }
+    val still = changes.filter { it.pressed }.map { it.id }.toSet()
+    down.filter { it !in still }.forEach { down.remove(it); onUp(it) }
+  }
+  fun releaseAll() { val ids = down.toList(); down.clear(); ids.forEach(onUp) }
+}
 
 object Layout {
   /** Lays out n cells in the grid that maximizes cell size for the given screen (folded or unfolded). */

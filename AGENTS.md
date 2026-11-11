@@ -36,8 +36,14 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â
   Start bedtime. Saved tile sets go through `enabledFrom`, which drops names from older versions (Garden, Music pads, Night sky were
   removed in round 2; Stickers in v13) and never returns an empty menu (ModeListTest). `modeknown` records which tiles existed
   when the set was saved (missing = v12 tiles), so a tile added later (Splash pond) starts on.
+* Touch: every screen goes through `Modifier.multiTouch` â†’ `FingerTracker` (FingerTrackerTest), which guarantees one `onUp` per
+  `onDown`, even if a release is lost or the gesture is cancelled. Don't hand-roll pointer loops in modes.
+* Animal parade (`Parade`/`ParadeGate` in Extras.kt, ParadeTest): every 45th real finger-down, at most once per 120 s. It's counted
+  in `multiTouch`, never from `Fx.tap`/haptics (those fire on every rub step and auto-launch and made it run nonstop in Wash).
+* Pig voice: always the synthesized `Sfx.oinkOink` (`AnimalSounds.SYNTH_ONLY`, PigSoundTest); the generated `animal_pig` clip
+  squeals at ~500 Hz and is still packaged but unused. Synth animal voices target `Sfx.ANIMAL_RMS` to match the clips.
 * Fireworks (`FireworksModel`, FireworksTest): any touch launches a rocket under the finger that bursts where it is; holding fires
-  every 0.3 s. Caps: 6 rockets (the oldest bursts early), 900 sparks (the oldest drop), whoosh/boom throttled. No music.
+  every 0.3 s, at most `HOLD_MAX` (8) times per touch, so a stuck finger can't fire forever. Caps: 6 rockets (the oldest bursts early), 900 sparks (the oldest drop), whoosh/boom throttled. No music.
   Each shape has its own sound (ring = `bigBoom`, heart = `twinkle`, star = loud crackle); quick taps on one spot build up to 3
   extra spark layers; every 6th rocket is a smiley or cat face; 12 silent fireflies drift and glow brighter between taps.
 * Feed the monster (`FeedModel`, FeedTest): tap a food, or anywhere (feeds the nearest), and it flies into the mouth; drag and let

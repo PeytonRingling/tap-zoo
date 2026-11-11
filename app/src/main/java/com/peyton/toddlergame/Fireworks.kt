@@ -24,10 +24,11 @@ internal class Burst(val x: Float, val y: Float, val t0: Float, val color: Color
 internal class Firefly(var x: Float, var y: Float, var heading: Float, val phase: Float)
 
 /** Fireworks for an 18-month-old: any touch anywhere sends a rocket up from the bottom under the finger, and it bursts big right
- *  where the finger is. Holding a finger keeps firing. Nothing to aim at, nothing to win or lose, no music (the booms are it). */
+ *  where the finger is. Holding a finger keeps firing a few more ([HOLD_MAX]), then waits for a new touch, so a finger that's
+ *  stuck down (or a release that never arrives) can't fire forever. Nothing to aim at, nothing to win or lose, no music (the booms are it). */
 internal class FireworksModel(private val sink: SoundSink = GameSound, private val rnd: Random = Random.Default) {
   companion object {
-    const val FLIGHT = 0.4f; const val HOLD_EVERY = 0.3f; const val MAX_ROCKETS = 6; const val MAX_SPARKS = 900
+    const val FLIGHT = 0.4f; const val HOLD_EVERY = 0.3f; const val HOLD_MAX = 8; const val MAX_ROCKETS = 6; const val MAX_SPARKS = 900
     const val SPARK_LIFE = 1.5f; const val DRAG = 3f
     /** Spark speed as a share of the short side; with [DRAG] they coast out to about 0.2 of it, a burst 40% of the screen across. */
     const val SPEED = 0.6f
@@ -40,7 +41,7 @@ internal class FireworksModel(private val sink: SoundSink = GameSound, private v
   }
   val fireflies = ArrayList<Firefly>()
   val rockets = ArrayList<Rocket>(); val sparks = ArrayList<Spark>(); val bursts = ArrayList<Burst>()
-  private val holds = HashMap<Long, Offset>(); private val lastFire = HashMap<Long, Float>()
+  private val holds = HashMap<Long, Offset>(); private val lastFire = HashMap<Long, Float>(); private val holdFired = HashMap<Long, Int>()
   var w = 1f; var h = 1f; var t = 0f; var lastTouch = 0f
   private var shapeIdx = 0; private var colorIdx = 0
   private var lastWhoosh = -1f; private var lastBoom = -1f
@@ -49,9 +50,9 @@ internal class FireworksModel(private val sink: SoundSink = GameSound, private v
 
   private fun ok(p: Offset) = p.x.isFinite() && p.y.isFinite() && w >= 2f && h >= 2f
 
-  fun down(id: Long, p: Offset) { if (!ok(p)) return; lastTouch = t; holds[id] = p; lastFire[id] = t; fire(p) }
+  fun down(id: Long, p: Offset) { if (!ok(p)) return; lastTouch = t; holds[id] = p; lastFire[id] = t; holdFired[id] = 0; fire(p) }
   fun move(id: Long, p: Offset) { if (!ok(p) || id !in holds) return; lastTouch = t; holds[id] = p }
-  fun up(id: Long) { holds.remove(id); lastFire.remove(id) }
+  fun up(id: Long) { holds.remove(id); lastFire.remove(id); holdFired.remove(id) }
 
   /** Launch now (sound + rocket in the same frame). Over [MAX_ROCKETS], the oldest bursts early instead of being dropped. */
   fun fire(p: Offset) {
@@ -123,7 +124,8 @@ internal class FireworksModel(private val sink: SoundSink = GameSound, private v
   fun step(dtIn: Float) {
     if (w < 2f || h < 2f) return
     val dt = if (dtIn.isNaN()) 0f else dtIn.coerceIn(0f, 0.1f)
-    for ((id, p) in holds) if (t - (lastFire[id] ?: t) >= HOLD_EVERY) { lastFire[id] = t; fire(p) }
+    for ((id, p) in holds) { val n = holdFired[id] ?: 0
+      if (n < HOLD_MAX && t - (lastFire[id] ?: t) >= HOLD_EVERY) { lastFire[id] = t; holdFired[id] = n + 1; fire(p) } }
     rockets.filter { t - it.t0 >= FLIGHT }.forEach { burst(it) }
     val m = min(w, h); val drag = exp(-DRAG * dt); val g = m * 0.12f
     for (s in sparks) { s.vx *= drag; s.vy = s.vy * drag + g * dt; s.x += s.vx * dt; s.y += s.vy * dt }
@@ -140,6 +142,8 @@ internal class FireworksModel(private val sink: SoundSink = GameSound, private v
 
   fun rocketY(r: Rocket): Float { val k = ((t - r.t0) / FLIGHT).coerceIn(0f, 1f); return r.y0 + (r.ty - r.y0) * (1 - (1 - k) * (1 - k)) }
   fun holding() = holds.size
+  /** Fingers still auto-firing (held and under [HOLD_MAX]). */
+  fun autoFiring() = holds.keys.count { (holdFired[it] ?: 0) < HOLD_MAX }
 }
 
 @Composable

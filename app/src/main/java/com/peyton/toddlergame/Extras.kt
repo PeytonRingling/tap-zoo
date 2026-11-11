@@ -112,10 +112,25 @@ fun DrawScope.drawFramedPhoto(img: ImageBitmap, c: Offset, s: Float, tilt: Float
   drawHeart(Offset(outer.right - s * 0.1f, outer.bottom - s * 0.1f), s * 0.07f, Pal.pink)
 }
 
-/** Reward: after lots of taps an animal parade marches across. */
+/** When the animal parade is earned: every [every]th real finger-down, but never sooner than [cooldown] s after the last one
+ *  started. Pure (time is passed in) so it's unit-tested. */
+internal class ParadeGate(val every: Int = 45, val cooldown: Double = 120.0) {
+  var taps = 0; private set
+  private var lastStart = Double.NEGATIVE_INFINITY
+  /** One finger touching down at [now] s. True = start a parade now. */
+  fun tap(now: Double): Boolean {
+    taps++
+    if (taps < every || now - lastStart < cooldown) return false
+    taps = 0; lastStart = now; return true
+  }
+}
+
+/** Reward: after lots of taps an animal parade marches across. Counted from finger-downs in [multiTouch] only, not from haptics
+ *  or sounds: those fire on every rub, drag step and auto-launch, which made the parade run almost nonstop in Wash and Fireworks. */
 object Parade {
-  var taps = 0; var pending by mutableStateOf(false)
-  fun onTap() { taps++; if (taps >= 45) { taps = 0; pending = true } }
+  internal var gate = ParadeGate(); var pending by mutableStateOf(false)
+  internal var clock: () -> Double = { System.nanoTime() / 1e9 }
+  fun onFingerDown() { if (gate.tap(clock())) pending = true }
 }
 
 @Composable
