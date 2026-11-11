@@ -153,7 +153,7 @@ fun AnimalsScreen() {
       val d = target - c; val len = max(d.getDistance(), r)
       softShadow(Rect(c.x - r * 0.75f * (1 + hop / r * 0.5f), c.y + r * 0.98f, c.x + r * 0.75f * (1 + hop / r * 0.5f), c.y + r * 1.22f), r * 0.2f, r * 0.12f, Pal.shadow.copy(alpha = 0.2f))
       c += Offset(0f, hop)
-      if (react > 0f) drawCircle(Brush.radialGradient(listOf(Pal.vivid[i].copy(alpha = 0.45f * react), Color.Transparent), c, r * 1.6f), r * 1.6f, c)
+      if (react > 0f) drawCircle(Brush.radialGradient(listOf(Pal.vivid[i % Pal.vivid.size].copy(alpha = 0.45f * react), Color.Transparent), c, r * 1.6f), r * 1.6f, c)
       rotate(wig, c) { scale(1 + sq, 1 - sq, c) {
         drawCritter(f.k, c, r, Offset(d.x / len, d.y / len), if (since < 0.6f) 0.75f else blink, if (since < 0.8f) react else 0f)
       } }
