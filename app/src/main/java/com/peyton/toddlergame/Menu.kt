@@ -278,7 +278,10 @@ internal val CREDITS = listOf("Monkeys Spinning Monkeys", "Beachfront Celebratio
   "\"$it\" Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0 License\nhttp://creativecommons.org/licenses/by/4.0/\n" +
     "Edited: trimmed/looped and re-encoded for Tap Zoo."
 } + "\n\nBalloon pop: \"Pop 01\" by LilMati and \"Balloon Pop\" by Breviceps (freesound.org, CC0)." +
-  "\nAnimal sounds made with elevenlabs.io. Other music and sounds are original to Tap Zoo."
+  "\nHorse whinny: Lemasson A, Remeuf K, Trabalon M, Cuir F, Hausberger M (2015), PLOS ONE 10(2): e0118468, S2 Sound, CC BY 4.0 " +
+  "(creativecommons.org/licenses/by/4.0), trimmed. Sheep, rooster (PDSounds), owl (US National Park Service): public domain. " +
+  "Donkey: felix.blume (freesound.org, CC0)." +
+  "\nOther animal sounds made with elevenlabs.io. Other music and sounds are original to Tap Zoo."
 
 /** Six bars, 0 = muted (red). */
 @Composable

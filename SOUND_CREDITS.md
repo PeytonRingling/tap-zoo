@@ -9,6 +9,23 @@ The noise and name were joined, trimmed to under 1.6 s, peak-normalized to -1 dB
 License note: ElevenLabs output from a free plan is non-commercial only and must be credited to "elevenlabs.io" when shared; paid plans allow
 commercial use. ElevenLabs' Sound Effects terms also say generated sound effects may be distributed as part of an app/production, not
 as standalone audio files or a sound library. That's why they're kept in a private repo and only ship inside the APK; do not reuse them separately.
+## Animal recordings in this repo (app/src/main/res/raw/animal_{horse,sheep,rooster,owl,donkey}.ogg)
+Real recordings under free licences (public domain, CC0 or CC BY 4.0), so they can live in this public repo. tools/prepare_animals.py
+downloads each from Wikimedia Commons and makes one short cut: mono 44.1 kHz, 80 Hz high-pass, short fades, then the loud part is
+loudness-matched to the private clips (about -19 dBFS RMS, peak at most -1 dBFS), saved as Ogg Vorbis q4. No spoken name is added.
+- animal_horse.ogg (whinny, 2.05 s from 0.66 s): S2 Sound from Lemasson A, Remeuf K, Trabalon M, Cuir F, Hausberger M (2015),
+  "Mares Prefer the Voices of Highly Fertile Stallions", PLOS ONE 10(2): e0118468. **CC BY 4.0**
+  (https://creativecommons.org/licenses/by/4.0/). Edited: trimmed, filtered, loudness-matched.
+  https://commons.wikimedia.org/wiki/File:Mares-Prefer-the-Voices-of-Highly-Fertile-Stallions-pone.0118468.s002.oga
+- animal_sheep.ogg (baa, 1.12 s from 0.58 s): "Sheep bleating" by earthcalling (PDSounds), **public domain**.
+  https://commons.wikimedia.org/wiki/File:Sheep_bleating.ogg
+- animal_rooster.ogg (cock-a-doodle-doo, 2.25 s from 2.86 s): "Medium rooster crowing" by alys (PDSounds), **public domain**.
+  https://commons.wikimedia.org/wiki/File:Medium_rooster_crowing.ogg
+- animal_owl.ogg (two hoots, 0.95 s from 1.80 s): "Barred Owl, Yellowstone National Park", US National Park Service (a work of the
+  US federal government), **public domain**. https://commons.wikimedia.org/wiki/File:Barred_Owl,_Yellowstone_National_Park.oga
+- animal_donkey.ogg (hee-haw, 2.10 s from 6.30 s): "A donkey is braying in his enclosure in south of France" by felix.blume
+  (freesound.org/s/157763), **CC0 1.0**. https://commons.wikimedia.org/wiki/File:157763_felix-blume_a-donkey-is-braying-in-his-enclosure-in-south-of-france.wav
+
 ## Music
 ### music_balloons.ogg (Balloons, Splash pond) and music_bubbles.ogg (Bubbles, Wash): Kevin MacLeod, CC BY 4.0
 In this public repo (CC BY 4.0 allows redistribution with credit). The same credit appears in the app: Parent settings › Credits.
@@ -39,4 +56,4 @@ Made from Freesound's public previews. It's one 119 ms hit, 16-bit mono 44.1 kHz
 it at 7 pitch steps (±8%, bigger balloon = lower). If the file is missing, the synthesized pop in Sound.kt is used.
 
 ## Other effects
-Synthesized in code at runtime (Sound.kt), including the bubble pops.
+Synthesized in code at runtime (Sound.kt), including the bubble pops and the pig's oink (the generated pig clip isn't used).

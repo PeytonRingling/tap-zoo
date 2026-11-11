@@ -31,7 +31,8 @@ echo "signer: $certs"
 [[ "$certs" == "$CERT" ]] || { echo "FAIL: not signed with the release key (see RELEASING.md)" >&2; exit 1; }
 sounds=$(unzip -l "$OUT" | grep -c 'res/raw/animal_' || true)
 echo "animal sounds: $sounds"
-[[ "$sounds" == 8 ]] || { echo "FAIL: expected 8 res/raw/animal_* sounds (is the sounds submodule checked out?)" >&2; exit 1; }
+want=$(( $(ls sounds/res/raw/animal_*.ogg 2>/dev/null | wc -l) + $(ls app/src/main/res/raw/animal_*.ogg | wc -l) ))   # private (8) + public recordings
+[[ "$(ls sounds/res/raw/animal_*.ogg 2>/dev/null | wc -l)" == 8 && "$sounds" == "$want" ]] || { echo "FAIL: expected $want res/raw/animal_* sounds, 8 of them private (is the sounds submodule checked out?)" >&2; exit 1; }
 
 # Music + balloon pop are in the public repo (res/raw); make sure they made it into the APK.
 listing=$(unzip -l "$OUT")

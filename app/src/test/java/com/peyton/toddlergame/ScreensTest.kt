@@ -59,6 +59,22 @@ class ScreensTest {
     for ((setup, ms) in steps) { rule.runOnIdle { setup(m) }; rule.mainClock.advanceTimeBy(ms) }
     rule.onRoot().captureRoboImage("$out/$name.png")
   }
+  /** Aquarium with a scripted model: each step runs [setup] then lets [ms] pass. */
+  private fun aquaShot(name: String, vararg steps: Pair<(AquaModel) -> Unit, Long>) {
+    rule.mainClock.autoAdvance = false
+    val m = AquaModel(FakeSink(), kotlin.random.Random(2))
+    rule.setContent { Box(Modifier.fillMaxSize()) { AquariumScreenFor(m) } }
+    rule.mainClock.advanceTimeBy(2000)
+    for ((setup, ms) in steps) { rule.runOnIdle { setup(m) }; rule.mainClock.advanceTimeBy(ms) }
+    rule.onRoot().captureRoboImage("$out/$name.png")
+  }
+  private val feedFive: (AquaModel) -> Unit = { m -> for (i in 0 until 5) m.tap(Offset(m.w * (0.15f + i * 0.17f), m.h * 0.12f)) }
+  private val scareOne: (AquaModel) -> Unit = { m -> m.fish[0].let { m.tap(Offset(it.x, it.y)) } }
+  @Test fun aquariumFeedAndTreat() = aquaShot("70_aquarium_feed_treat", feedFive to 1800L)
+  @Test fun aquariumScared() = aquaShot("71_aquarium_scared_turning", scareOne to 450L)
+  @Config(qualifiers = FOLDED) @Test fun aquariumFeedFolded() = aquaShot("72_aquarium_feed_folded", feedFive to 1800L)
+  @Config(qualifiers = FOLDED) @Test fun animalsFolded() = shot("73_animals_folded", "ANIMALS", listOf(0.5f to 0.5f))
+
   private fun FeedModel.food(k: FoodKind) = foods.first { it.kind == k }.let { Offset(it.x, it.y) }
   private val holdNear: (FeedModel) -> Unit = { m -> m.down(1, m.food(FoodKind.BANANA)); m.move(1, m.mouth + Offset(m.monsterR * 1.1f, -m.monsterR * 0.9f)) }
   private val lemon: (FeedModel) -> Unit = { m -> m.down(2, m.food(FoodKind.LEMON)); m.up(2) }

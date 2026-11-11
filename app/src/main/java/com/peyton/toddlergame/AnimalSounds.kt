@@ -6,7 +6,8 @@ import android.media.SoundPool
 import android.os.Handler
 import android.os.Looper
 
-/** Animal voice clips (res/raw/animal_*.ogg from the private `sounds/` submodule, see SOUND_CREDITS.md) played through SoundPool.
+/** Animal voice clips played through SoundPool: res/raw/animal_*.ogg from the private `sounds/` submodule (the first 8 animals) and
+ *  public-domain/CC recordings in this repo (horse, sheep, rooster, owl, donkey), see SOUND_CREDITS.md.
  *  Clips are looked up by name, so a build without the submodule has none; then (or before a clip loads) the
  *  synthesized voice plays instead. */
 object AnimalSounds {
@@ -18,13 +19,15 @@ object AnimalSounds {
    *  a pig, so it always uses the synthesized oink-oink ([Sfx.oinkOink]) instead. */
   internal val SYNTH_ONLY = setOf(Critter.PIG)
   private val names = mapOf(Critter.DOG to "animal_dog", Critter.CAT to "animal_cat", Critter.COW to "animal_cow",
-    Critter.FROG to "animal_frog", Critter.LION to "animal_lion", Critter.CHICK to "animal_chick", Critter.DUCK to "animal_duck")
+    Critter.FROG to "animal_frog", Critter.LION to "animal_lion", Critter.CHICK to "animal_chick", Critter.DUCK to "animal_duck",
+    // public recordings in app/src/main/res/raw (tools/prepare_animals.py), always in the build
+    Critter.HORSE to "animal_horse", Critter.SHEEP to "animal_sheep", Critter.ROOSTER to "animal_rooster", Critter.OWL to "animal_owl", Critter.DONKEY to "animal_donkey")
 
   /** Raw resource id for [name], or 0 if this build doesn't include it (public clone without the sounds submodule). */
   @android.annotation.SuppressLint("DiscouragedApi")
   private fun rawId(c: Context, name: String): Int = c.resources.getIdentifier(name, "raw", c.packageName)
 
-  /** How many animal clips this build uses: 7 with the sounds submodule (all but [SYNTH_ONLY]), 0 without. */
+  /** How many animal clips this build uses: 12 with the sounds submodule (all but [SYNTH_ONLY]), 5 (the public ones) without. */
   internal fun available(c: Context): Int = names.values.count { rawId(c, it) != 0 }
 
   fun init(c: Context) {

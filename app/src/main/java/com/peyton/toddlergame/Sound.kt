@@ -45,6 +45,12 @@ object Sfx {
       Critter.LION to tone(150.0, 115.0, 0.7, vib = 20.0, vibRate = 25.0, harm = 1.0, noise = 0.35, decay = 1.5),
       Critter.DUCK to seq(tone(520.0, 420.0, 0.16, harm = 1.0, noise = 0.2, vib = 40.0, vibRate = 50.0), silence(0.07), tone(500.0, 400.0, 0.18, harm = 1.0, noise = 0.2, vib = 40.0, vibRate = 50.0)),
       Critter.CHICK to seq(tone(1800.0, 2400.0, 0.07, decay = 1.0), silence(0.04), tone(1900.0, 2500.0, 0.07), silence(0.04), tone(2000.0, 2600.0, 0.08)),
+      // Fallbacks only (before the recorded clip loads, or if it's missing): the recordings in res/raw are what normally plays.
+      Critter.HORSE to tone(950.0, 520.0, 0.9, vib = 70.0, vibRate = 11.0, harm = 0.8, decay = 1.2, noise = 0.1, gain = 0.8),
+      Critter.SHEEP to baa,
+      Critter.ROOSTER to seq(tone(500.0, 650.0, 0.12, harm = 0.9, noise = 0.15), tone(650.0, 700.0, 0.12, harm = 0.9, noise = 0.15), tone(700.0, 750.0, 0.14, harm = 0.9, noise = 0.15), tone(800.0, 560.0, 0.4, vib = 20.0, vibRate = 12.0, harm = 0.9, noise = 0.15, decay = 1.5)),
+      Critter.OWL to seq(tone(420.0, 390.0, 0.22, harm = 0.15, decay = 1.5), silence(0.12), tone(430.0, 370.0, 0.4, harm = 0.15, decay = 1.5)),
+      Critter.DONKEY to seq(tone(950.0, 850.0, 0.28, harm = 0.9, noise = 0.2, decay = 0.8), tone(380.0, 320.0, 0.38, harm = 0.9, noise = 0.3, decay = 0.8), tone(950.0, 850.0, 0.28, harm = 0.9, noise = 0.2, decay = 0.8), tone(380.0, 300.0, 0.4, harm = 0.9, noise = 0.3, decay = 1.5)),
     )
   }
   /** Cartoon pig: two quick nasal "oink"s. A low buzzy pulse train (about 150 Hz gliding down to 105) plus breath noise, through
@@ -83,6 +89,8 @@ object Sfx {
   val balloonPop by lazy { mix(tone(2600.0, 2600.0, 0.035, noise = 1.0, decay = 8.0), tone(170.0, 60.0, 0.14, harm = 0.2, decay = 5.0, gain = 0.8)) }
   val wheee by lazy { tone(500.0, 1400.0, 0.6, vib = 20.0, vibRate = 7.0, decay = 1.0, gain = 0.6) }
   val blub by lazy { seq(tone(300.0, 700.0, 0.06, harm = 0.0, decay = 2.0), tone(420.0, 950.0, 0.07, harm = 0.0, decay = 2.0)) }
+  /** Aquarium: each fish blubs at its own pitch (low big-fish blub up to a tiny high one). */
+  val blubs: List<FloatArray> by lazy { listOf(0.75, 0.88, 1.0, 1.15, 1.32).map { k -> seq(tone(300.0 * k, 700.0 * k, 0.06, harm = 0.0, decay = 2.0), tone(420.0 * k, 950.0 * k, 0.07, harm = 0.0, decay = 2.0)) } }
   val inflate by lazy { tone(260.0, 820.0, 0.2, harm = 0.25, decay = 3.0, gain = 0.45) }
   val bubblePop by lazy { tone(900.0, 1600.0, 0.06, harm = 0.0, decay = 6.0, gain = 0.5) }
   val plip by lazy { tone(1200.0, 1800.0, 0.05, harm = 0.0, decay = 4.0, gain = 0.6) }
@@ -156,7 +164,7 @@ object Sfx {
    *  the UI while its sounds are generated. `by lazy` is synchronized, so racing a tap is safe. Returns them for tests. */
   fun prewarm(): List<FloatArray> = animal.values + bells + xylo + honks +
     listOf(peekaboo, giggle, chime, boom, balloonPop, wheee, blub, inflate, bubblePop, plip, snap, zoom, kick, tom, snare, cymbal, march, whoosh) +
-    comboNotes + listOf(squeak, crackle, chomp, burp, scrub, shower, twinkle, bigBoom, pucker, crunch, splash, blowDry, trumpet, baa, swish) + plops
+    comboNotes + blubs + listOf(squeak, crackle, chomp, burp, scrub, shower, twinkle, bigBoom, pucker, crunch, splash, blowDry, trumpet, baa, swish) + plops
 }
 
 /** Pure software mixer (no Android types, unit-tested). Voices are capped so chaos stays pleasant; when a new sound would

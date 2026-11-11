@@ -51,3 +51,4 @@ screens/
 
 # --- Rendered audio from tools/*.py (only the .ogg in res/raw ships) ---
 tools/*.wav
+__pycache__/
