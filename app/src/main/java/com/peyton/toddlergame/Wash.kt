@@ -127,7 +127,8 @@ internal class WashModel(private val sink: SoundSink = GameSound, private val rn
     sink.play(Sfx.shower, 0.5f); sink.haptic(true)
   }
 
-  private fun voice() { animal.critter?.let { sink.animal(it, 0.9f, 0) } ?: sink.play(if (animal == WashAnimal.ELEPHANT) Sfx.trumpet else Sfx.baa, 0.6f) }
+  private fun voice() { val v = animal.critter ?: Critter.SHEEP.takeIf { animal == WashAnimal.SHEEP }   // the sheep has a real baa now
+    if (v != null) sink.animal(v, 0.9f, 0) else sink.play(Sfx.trumpet, 0.6f) }
 
   fun step(dtIn: Float) {
     if (w < 2f || h < 2f) return

@@ -22,7 +22,7 @@ Release builds need the private animal sounds: `git submodule update --init` (th
 ```bash
 git submodule update --init    # private sounds -> sounds/res/raw (needs access to PeytonRingling/tap-zoo-sounds)
 ./gradlew assembleDebug        # -> app/build/outputs/apk/debug/app-debug.apk
-unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -c 'res/raw/animal_'   # must print 8
+unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -c 'res/raw/animal_'   # must print 13 (8 private + 5 public)
 BT=$ANDROID_HOME/build-tools/34.0.0
 $BT/apksigner verify --print-certs app/build/outputs/apk/debug/app-debug.apk | grep SHA-256   # 65f0d4cb...4a4d113f
 ```
@@ -45,7 +45,7 @@ equal to the name's, before handing it to PackageInstaller. Android then shows i
 tools/release.sh 2 9              # submodule + build + verify version/cert/8 sounds + refuse non-increasing versionCode; dry run
 tools/release.sh 2 9 --publish    # same, then `gh release create v9 release/tap-zoo-v9-vc2.apk ...` (Peyton's OK first)
 ```
-Release APKs must include the 8 animal sounds (the script fails otherwise). Shipping them inside the app is what the
+Release APKs must include the 8 private animal sounds (plus the 5 public recordings) (the script fails otherwise). Shipping them inside the app is what the
 ElevenLabs terms allow; never attach the raw `.ogg` files to a release.
 
 ## Testing: never run the emulator

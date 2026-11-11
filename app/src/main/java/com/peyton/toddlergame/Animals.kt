@@ -22,7 +22,9 @@ import kotlin.random.Random
 
 enum class Critter(val body: Color) {
   DOG(Color(0xFFC68642)), CAT(Color(0xFFFFA94D)), PIG(Color(0xFFFFB3C6)), COW(Color(0xFFF7F7F7)),
-  FROG(Color(0xFF7BD66B)), LION(Color(0xFFFFD166)), CHICK(Color(0xFFFFE45E)), DUCK(Color(0xFFFFFFFF))
+  FROG(Color(0xFF7BD66B)), LION(Color(0xFFFFD166)), CHICK(Color(0xFFFFE45E)), DUCK(Color(0xFFFFFFFF)),
+  // v13.3: real recordings (public domain / CC0 / CC BY, see SOUND_CREDITS.md)
+  HORSE(Color(0xFFC08A5B)), SHEEP(Color(0xFFFFF6EA)), ROOSTER(Color(0xFFFFFBF2)), OWL(Color(0xFFB58A62)), DONKEY(Color(0xFFB4ACA6))
 }
 
 private val INK = Color(0xFF3B2A20)
@@ -46,11 +48,26 @@ fun DrawScope.drawCritter(k: Critter, c: Offset, r: Float, look: Offset, blink: 
       for (s in listOf(-1f, 1f)) drawCircle(darker(body, 0.85f), r * 0.24f, o(s * 0.72f, -0.78f)) }
     Critter.DUCK -> drawOval(Color(0xFFEDEDF5), o(-0.12f, -1.25f), Size(r * 0.24f, r * 0.4f))
     Critter.CHICK -> for (i in -1..1) rotate(i * 25f, o(0f, -0.95f)) { drawOval(Color(0xFFFFC300), o(-0.08f, -1.35f), Size(r * 0.16f, r * 0.45f)) }
+    Critter.HORSE -> for (s in listOf(-1f, 1f)) { tri(o(s * 0.42f, -0.7f), o(s * 0.62f, -1.35f), o(s * 0.82f, -0.55f), darker(body, 0.85f)); tri(o(s * 0.52f, -0.72f), o(s * 0.62f, -1.15f), o(s * 0.72f, -0.65f), Color(0xFFF2B8A0)) }
+    Critter.SHEEP -> { for (i in 0 until 12) { val a = i * 2 * PI / 12; drawCircle(Color(0xFFF1E7DA), r * 0.38f, o((cos(a) * 1.0).toFloat(), (sin(a) * 0.95).toFloat())) }
+      for (s in listOf(-1f, 1f)) rotate(s * 20f, o(s * 1.05f, -0.25f)) { drawOval(Color(0xFF8A6E5C), o(s * 1.05f - 0.28f, -0.4f), Size(r * 0.56f, r * 0.3f)) } }
+    Critter.ROOSTER -> { for (i in -1..1) drawCircle(Color(0xFFE63946), r * (0.26f - abs(i) * 0.04f), o(i * 0.24f, -1.0f + abs(i) * 0.08f))
+      for (s in listOf(-1f, 1f)) drawOval(Color(0xFFFFB347), o(if (s < 0) -1.25f else 0.85f, -0.05f), Size(r * 0.4f, r * 0.55f)) }
+    Critter.OWL -> for (s in listOf(-1f, 1f)) tri(o(s * 0.45f, -0.75f), o(s * 0.85f, -1.25f), o(s * 0.9f, -0.45f), darker(body, 0.78f))
+    Critter.DONKEY -> for (s in listOf(-1f, 1f)) rotate(s * 12f, o(s * 0.45f, -0.75f)) {
+      drawOval(darker(body, 0.9f), o(s * 0.45f - 0.2f, -1.75f), Size(r * 0.4f, r * 1.2f)); drawOval(Color(0xFFF4C2C2), o(s * 0.45f - 0.1f, -1.55f), Size(r * 0.2f, r * 0.8f)) }
   }
   // head with soft shading
   drawCircle(Brush.radialGradient(listOf(lighter(body), body, darker(body, 0.9f)), center = o(-0.3f, -0.35f), radius = r * 1.6f), r, c)
   if (k == Critter.COW) clipPath(Path().apply { addOval(Rect(c, r)) }) {
     drawCircle(Color(0xFF3A3A3A), r * 0.35f, o(0.7f, -0.55f)); drawCircle(Color(0xFF3A3A3A), r * 0.25f, o(-0.85f, 0.15f))
+  }
+  when (k) {
+    Critter.HORSE -> { drawOval(Color.White.copy(alpha = 0.9f), o(-0.1f, -0.75f), Size(r * 0.2f, r * 0.55f))   // blaze
+      for (i in 0..2) drawCircle(Color(0xFF6B3E26), r * 0.17f, o(-0.2f + i * 0.2f, -0.92f + abs(i - 1) * 0.06f)) }   // forelock
+    Critter.OWL -> for (s in listOf(-1f, 1f)) drawCircle(Color(0xFFF3DFC1), r * 0.36f, o(s * 0.35f, -0.15f))   // eye discs
+    Critter.DONKEY -> for (i in 0..2) drawCircle(Color(0xFF5E5651), r * 0.14f, o(-0.16f + i * 0.16f, -0.93f + abs(i - 1) * 0.05f))
+    else -> {}
   }
   // cheeks
   for (s in listOf(-1f, 1f)) drawCircle(Color(0xFFFF6F91).copy(alpha = 0.35f), r * 0.15f, o(s * 0.62f, 0.25f))
@@ -77,6 +94,12 @@ fun DrawScope.drawCritter(k: Critter, c: Offset, r: Float, look: Offset, blink: 
     Critter.LION -> { drawOval(Color(0xFFFFF0C8), o(-0.38f, 0.12f), Size(r * 0.76f, r * 0.55f)); tri(o(-0.15f, 0.14f), o(0.15f, 0.14f), o(0f, 0.3f), Color(0xFF7A4A2A)); mouthY = 0.5f }
     Critter.DUCK -> { drawOval(Color(0xFFFF9F1C), o(-0.4f, 0.1f), Size(r * 0.8f, r * 0.34f)); drawOval(Color(0xFFE8850A), o(-0.32f, 0.3f), Size(r * 0.64f, r * 0.18f)); for (sd in listOf(-1f, 1f)) drawCircle(Color(0xFFB0600A), r * 0.035f, o(sd * 0.1f, 0.18f)); mouthY = 0.62f }
     Critter.CHICK -> { tri(o(-0.2f, 0.12f), o(0.2f, 0.12f), o(0f, 0.4f), Color(0xFFFF8C1A)); mouthY = 0.48f }
+    Critter.HORSE -> { drawOval(Color(0xFFE8C9A4), o(-0.55f, 0.08f), Size(r * 1.1f, r * 0.72f)); for (s in listOf(-1f, 1f)) drawOval(Color(0xFF7A4A2A), o(s * 0.26f - 0.07f, 0.2f), Size(r * 0.14f, r * 0.2f)); mouthY = 0.7f }
+    Critter.SHEEP -> { for (i in 0 until 5) drawCircle(Color(0xFFF1E7DA), r * 0.2f, o(-0.4f + i * 0.2f, -0.82f + abs(i - 2) * 0.05f))
+      drawOval(Color(0xFF8A6E5C), o(-0.13f, 0.18f), Size(r * 0.26f, r * 0.16f)); mouthY = 0.55f }
+    Critter.ROOSTER -> { tri(o(-0.2f, 0.1f), o(0.2f, 0.1f), o(0f, 0.38f), Color(0xFFFF9F1C)); drawOval(Color(0xFFE63946), o(-0.09f, 0.34f), Size(r * 0.18f, r * 0.3f)); mouthY = 0.78f }
+    Critter.OWL -> { tri(o(-0.11f, 0.08f), o(0.11f, 0.08f), o(0f, 0.32f), Color(0xFFE09F3E)); mouthY = 0.6f }
+    Critter.DONKEY -> { drawOval(Color(0xFFEDE6DE), o(-0.58f, 0.1f), Size(r * 1.16f, r * 0.72f)); for (s in listOf(-1f, 1f)) drawOval(Color(0xFF5E5651), o(s * 0.26f - 0.07f, 0.22f), Size(r * 0.14f, r * 0.2f)); mouthY = 0.72f }
   }
   val mw = if (k == Critter.FROG) 0.9f else 0.46f
   if (mouth < 0.1f) drawArc(INK, 20f, 140f, false, o(-mw / 2, mouthY - 0.2f), Size(r * mw, r * 0.28f), style = Stroke(r * 0.06f, cap = StrokeCap.Round))

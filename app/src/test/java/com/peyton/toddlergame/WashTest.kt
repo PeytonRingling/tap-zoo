@@ -70,8 +70,8 @@ class WashTest {
     val (m, s) = model(); val seen = LinkedHashSet<WashAnimal>()
     repeat(WashModel.ORDER.size) { seen += m.animal; m.washClean(); m.advance(WashModel.RINSE + WashModel.SHAKE + WashModel.DRY + WashModel.FLUFFY + WashModel.ENTER + 0.3f) }
     assertEquals(WashModel.ORDER.toSet(), seen)
-    assertEquals("elephant trumpets", 1, s.count(Sfx.trumpet)); assertEquals("sheep baas", 1, s.count(Sfx.baa))
-    assertEquals(WashModel.ORDER.count { it.critter != null }, s.animals.size)
+    assertEquals("elephant trumpets", 1, s.count(Sfx.trumpet)); assertTrue("sheep baas with the real recording", s.animals.any { it.first == Critter.SHEEP })
+    assertEquals(WashModel.ORDER.count { it.critter != null } + 1, s.animals.size)
   }
 
   @Test fun scrubbingTheBellyGiggles() {

@@ -8,7 +8,8 @@ Animal voice clips (ElevenLabs, `animal_*.ogg`) live in the **private** repo `Pe
 submodule at `sounds/` (`sounds/res/raw/`), which Gradle adds as an extra res dir. Clone with
 `git clone --recurse-submodules https://github.com/PeytonRingling/tap-zoo.git` (or run `git submodule update --init` after a plain clone).
 Without it (public clones, no access) the app still builds and plays the synthesized animal voices. Shipped APKs must be built
-WITH the submodule: check `unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -c animal_` prints 8.
+WITH the submodule: check `unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -c animal_` prints 13 (8 private + 5 public
+recordings in app/src/main/res/raw, rebuilt by tools/prepare_animals.py, credited in SOUND_CREDITS.md and in-app `CREDITS`).
 Never copy the `.ogg` files into this repo or make tap-zoo-sounds public (ElevenLabs terms: no standalone distribution).
 Load sounds by name (`getIdentifier`), never `R.raw.animal_*`, so the build works without them.
 
@@ -42,6 +43,12 @@ Needs JDK 17+ and an Android SDK with platform 34 (`local.properties` `sdk.dir=â
   in `multiTouch`, never from `Fx.tap`/haptics (those fire on every rub step and auto-launch and made it run nonstop in Wash).
 * Pig voice: always the synthesized `Sfx.oinkOink` (`AnimalSounds.SYNTH_ONLY`, PigSoundTest); the generated `animal_pig` clip
   squeals at ~500 Hz and is still packaged but unused. Synth animal voices target `Sfx.ANIMAL_RMS` to match the clips.
+* Aquarium (`AquaModel`, AquariumTest): motion is velocity-based. Taps, food, wandering and walls only change the velocity a fish
+  *wants* (`desired`); the real velocity eases toward it (`STEER`), and `face` eases through the turn (`TURN`). Never set a fish's
+  x/y or direction directly: that was the old bumpiness. Tap a fish: own-pitch blub (`Sfx.blubs`), darts away, blows bubbles.
+  Tap the water: food sinks, nearest 2 fish swim to it; every 5th sprinkle is a golden treat (chime + happy wiggle). Bubbles pop.
+* Animals soundboard: 13 `Critter`s. Horse, sheep, rooster, owl, donkey (v13.3) use real recordings; Critter.entries also feeds
+  Peekaboo, Balloons and the parade, so a new critter needs art in `drawCritter`, a clip name and an `Sfx.animal` fallback.
 * Fireworks (`FireworksModel`, FireworksTest): any touch launches a rocket under the finger that bursts where it is; holding fires
   every 0.3 s, at most `HOLD_MAX` (8) times per touch, so a stuck finger can't fire forever. Caps: 6 rockets (the oldest bursts early), 900 sparks (the oldest drop), whoosh/boom throttled. No music.
   Each shape has its own sound (ring = `bigBoom`, heart = `twinkle`, star = loud crackle); quick taps on one spot build up to 3
